@@ -14,13 +14,20 @@ export const BalanceSheetReport = () => {
   const assetAccounts = accounts.filter(a => a.category === 'Assets');
   const liabilityAccounts = accounts.filter(a => a.category === 'Liabilities');
   const capitalAccounts = accounts.filter(a => a.category === 'Capital');
+  const incomeAccounts = accounts.filter(a => a.category === 'Income');
+  const expenseAccounts = accounts.filter(a => a.category === 'Expenses');
 
   const totalAssets = assetAccounts.reduce((acc, a) => acc + (Number(a.balance) || 0), 0);
   const totalLiabilities = liabilityAccounts.reduce((acc, a) => acc + (Number(a.balance) || 0), 0);
   const totalCapital = capitalAccounts.reduce((acc, a) => acc + (Number(a.balance) || 0), 0);
+  const totalIncome = incomeAccounts.reduce((acc, a) => acc + (Number(a.balance) || 0), 0);
+  const totalExpenses = expenseAccounts.reduce((acc, a) => acc + (Number(a.balance) || 0), 0);
 
-  const liabilitiesAndCapital = totalLiabilities + totalCapital;
-  const isEquationBalanced = Math.abs(totalAssets - liabilitiesAndCapital) < 1000;
+  const currentPeriodNetProfit = totalIncome - totalExpenses;
+  const totalEquity = totalCapital + currentPeriodNetProfit;
+  const totalLiabilitiesAndEquity = totalLiabilities + totalEquity;
+
+  const isEquationBalanced = Math.abs(totalAssets - totalLiabilitiesAndEquity) < 1000;
 
   const handlePrint = () => {
     window.print();
@@ -34,8 +41,10 @@ export const BalanceSheetReport = () => {
       ...liabilityAccounts.map(a => ['Liability', a.name, a.balance]),
       ['Total Liabilities', '', totalLiabilities],
       ...capitalAccounts.map(a => ['Capital', a.name, a.balance]),
-      ['Total Capital', '', totalCapital],
-      ['Total Liabilities & Capital', '', liabilitiesAndCapital]
+      ['Subtotal Capital', '', totalCapital],
+      ['Equity', 'Current Period Net Profit / Retained Earnings', currentPeriodNetProfit],
+      ['Total Equity', '', totalEquity],
+      ['Total Liabilities & Equity', '', totalLiabilitiesAndEquity]
     ];
     const csvContent = 'data:text/csv;charset=utf-8,' + rows.map(e => e.join(',')).join('\n');
     const encodedUri = encodeURI(csvContent);
@@ -71,7 +80,7 @@ export const BalanceSheetReport = () => {
         </div>
       </div>
 
-      {/* Accounting Equation Banner: Total Assets = Total Liabilities + Capital */}
+      {/* Accounting Equation Banner: Total Assets = Total Liabilities + Total Equity */}
       <div className="p-5 rounded-xl border border-neutral-200 bg-white shadow-xs">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
           <div className="flex items-center gap-3">
@@ -81,7 +90,7 @@ export const BalanceSheetReport = () => {
             <div>
               <span className="text-[10px] uppercase font-bold text-neutral-400 tracking-wider">Accounting Equation</span>
               <h3 className="text-sm font-bold text-neutral-950">
-                Total Assets = Total Liabilities + Total Capital
+                Total Assets = Total Liabilities + Total Equity
               </h3>
             </div>
           </div>
@@ -94,7 +103,7 @@ export const BalanceSheetReport = () => {
             <span className="font-bold text-neutral-400">=</span>
             <div className="px-3 py-1.5 bg-neutral-50 rounded-md border border-neutral-200">
               <span className="text-neutral-500 block text-[10px]">Liabilities + Equity</span>
-              <span className="font-mono font-bold text-neutral-950 text-sm">{formatINR(liabilitiesAndCapital)}</span>
+              <span className="font-mono font-bold text-neutral-950 text-sm">{formatINR(totalLiabilitiesAndEquity)}</span>
             </div>
             <Badge variant={isEquationBalanced ? 'paid' : 'loss'}>
               {isEquationBalanced ? 'Equation Balanced' : 'Check Suspense Account'}
@@ -182,13 +191,25 @@ export const BalanceSheetReport = () => {
                   <TableCell className="pl-6 text-xs uppercase">Subtotal Capital</TableCell>
                   <TableCell className="text-right font-mono text-xs">{formatINR(totalCapital)}</TableCell>
                 </TableRow>
+                <TableRow className="bg-emerald-50/60 font-semibold text-emerald-950">
+                  <TableCell className="pl-6 font-medium text-sm">
+                    Current Period Net Profit / Retained Earnings
+                  </TableCell>
+                  <TableCell className="text-right font-mono font-bold text-emerald-700">
+                    {formatINR(currentPeriodNetProfit)}
+                  </TableCell>
+                </TableRow>
+                <TableRow className="bg-neutral-100 font-bold text-neutral-950">
+                  <TableCell className="pl-6 text-xs uppercase">Total Equity</TableCell>
+                  <TableCell className="text-right font-mono text-xs font-bold">{formatINR(totalEquity)}</TableCell>
+                </TableRow>
               </TableBody>
             </Table>
           </div>
 
           <div className="p-4 bg-neutral-100 border-t-2 border-neutral-900 flex justify-between items-center text-base font-bold text-neutral-950">
-            <span>TOTAL LIABILITIES & CAPITAL</span>
-            <span className="font-mono text-lg">{formatINR(liabilitiesAndCapital)}</span>
+            <span>TOTAL LIABILITIES & EQUITY</span>
+            <span className="font-mono text-lg">{formatINR(totalLiabilitiesAndEquity)}</span>
           </div>
         </div>
       </div>
