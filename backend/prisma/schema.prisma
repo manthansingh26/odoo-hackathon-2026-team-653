@@ -1,0 +1,123 @@
+// Prisma schema — the single source of truth for the database.
+// Schema changes happen ONLY here, then via a migration:
+//   npm run prisma:migrate -- --name describe_the_change
+// Never hand-edit tables in pgAdmin; migrations keep every teammate's
+// database identical and give us a replayable history.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums — database-level validation so an invalid type can never be stored.
+// ---------------------------------------------------------------------------
+
+enum ContactType {
+  CUSTOMER
+  VENDOR
+}
+
+enum TransactionType {
+  SALE
+  PURCHASE
+}
+
+enum TransactionStatus {
+  PAID
+  PENDING
+}
+
+// ---------------------------------------------------------------------------
+// Master data
+// ---------------------------------------------------------------------------
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("users")
+}
+
+model Contact {
+  id        String      @id @default(uuid())
+  name      String
+  type      ContactType
+  email     String?     @unique
+  phone     String?
+  createdAt DateTime    @default(now()) @map("created_at")
+
+  transactions Transaction[]
+
+  @@map("contacts")
+}
+
+model Product {
+  id        String   @id @default(uuid())
+  name      String
+  sku       String   @unique
+  price     Decimal  @db.Decimal(12, 2)
+  stock     Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("products")
+}
+
+// ---------------------------------------------------------------------------
+// Transactions (purchase & sales workflow documents)
+// ---------------------------------------------------------------------------
+
+model Transaction {
+  id              String            @id @default(uuid())
+  type            TransactionType
+  reference       String            @unique
+  contactId       String            @map("contact_id")
+  amount          Decimal           @db.Decimal(12, 2)
+  status          TransactionStatus
+  transactionDate DateTime          @default(now()) @map("transaction_date")
+  createdAt       DateTime          @default(now()) @map("created_at")
+
+  contact      Contact       @relation(fields: [contactId], references: [id])
+  journalEntry JournalEntry? // one balanced journal entry per transaction
+
+  @@map("transactions")
+}
+
+// ---------------------------------------------------------------------------
+// Accounting core — every JournalEntry must satisfy:
+//   SUM(items.debit) === SUM(items.credit)
+// Enforced by postJournalEntry() in src/services/journal.service.js
+// ---------------------------------------------------------------------------
+
+model JournalEntry {
+  id              String   @id @default(uuid())
+  reference       String   @unique
+  description     String
+  transactionDate DateTime @default(now()) @map("transaction_date")
+  createdAt       DateTime @default(now()) @map("created_at")
+  transactionId   String?  @unique @map("transaction_id")
+
+  transaction Transaction?  @relation(fields: [transactionId], references: [id])
+  items       JournalItem[]
+
+  @@map("journal_entries")
+}
+
+model JournalItem {
+  id             String  @id @default(uuid())
+  journalEntryId String  @map("journal_entry_id")
+  accountName    String  @map("account_name")
+  debit          Decimal @default(0) @db.Decimal(12, 2)
+  credit         Decimal @default(0) @db.Decimal(12, 2)
+
+  journalEntry JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
+
+  @@map("journal_items")
+}
