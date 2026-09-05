@@ -59,7 +59,7 @@ export const AppProvider = ({ children }) => {
       localStorage.removeItem('urban_furniture_auth_v1');
       localStorage.removeItem('urban_furniture_user_v1');
     }
-  } catch (e) {
+  } catch {
     // ignore
   }
 
@@ -87,8 +87,7 @@ export const AppProvider = ({ children }) => {
   // For Contact User view, active contact ID (defaults to Nimesh Pathak C-101)
   const [activeContactId, setActiveContactId] = useState(currentUser?.contactId || 'C-101');
 
-  // Command palette & notification popover states
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  // Mobile menu state
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Active quick action modal: { type: string, payload?: any } | null
@@ -165,6 +164,11 @@ export const AppProvider = ({ children }) => {
             favorite: Boolean(c.favorite),
             createdAt: c.createdAt ? c.createdAt.slice(0, 10) : new Date().toISOString().slice(0, 10)
           }));
+          const nimesh = mappedContacts.find(c => (c.name || '').toLowerCase().includes('nimesh pathak') || c.email === 'nimesh.pathak@techcraft.io');
+          if (nimesh && demoUsers['Contact User']) {
+            demoUsers['Contact User'].contactId = nimesh.id;
+          }
+
           setData(prev => ({
             ...prev,
             contacts: mappedContacts
@@ -208,16 +212,110 @@ export const AppProvider = ({ children }) => {
             id: tx.id,
             date: tx.transactionDate ? tx.transactionDate.slice(0, 10) : new Date().toISOString().slice(0, 10),
             reference: tx.reference,
+            contactId: tx.contactId,
             contact: tx.contact?.name || 'Contact',
             type: tx.type === 'SALE' ? 'Sales' : tx.type === 'PURCHASE' ? 'Purchase' : tx.type,
             amount: Number(tx.amount || 0),
             status: tx.status === 'PAID' ? 'Paid' : tx.status === 'PENDING' ? 'Pending' : tx.status,
             paymentMethod: 'Bank'
           }));
+
+          // Derive Customer Invoices from SALE transactions
+          const mappedInvoices = transactions
+            .filter(tx => tx.type === 'SALE')
+            .map(tx => {
+              const dt = tx.transactionDate ? tx.transactionDate.slice(0, 10) : new Date().toISOString().slice(0, 10);
+              const due = new Date(new Date(dt).getTime() + 15 * 86400000).toISOString().slice(0, 10);
+              const totalAmt = Number(tx.amount || 0);
+              const isPaid = tx.status === 'PAID';
+              return {
+                id: tx.reference || tx.id,
+                orderId: `SO-${tx.reference?.replace('INV-', '') || tx.id.slice(-4)}`,
+                contactId: tx.contactId,
+                customerName: tx.contact?.name || 'Corporate Client',
+                customerEmail: tx.contact?.email || 'client@example.com',
+                customerAddress: tx.contact?.city ? `${tx.contact.city}, ${tx.contact.state || 'India'}` : 'Commercial Workspace Suite',
+                date: dt,
+                dueDate: due,
+                items: [
+                  {
+                    productId: 'P-FUR-COM',
+                    productName: `Commercial Furniture Batch (${tx.reference || 'Custom'})`,
+                    quantity: 1,
+                    unitPrice: totalAmt,
+                    taxRate: 0,
+                    total: totalAmt
+                  }
+                ],
+                subtotal: totalAmt,
+                tax: 0,
+                discount: 0,
+                grandTotal: totalAmt,
+                amountPaid: isPaid ? totalAmt : 0,
+                status: isPaid ? 'Paid' : 'Pending',
+                paymentMethod: isPaid ? 'Bank Direct' : 'Pending',
+                notes: `System generated invoice for transaction ${tx.reference}. Balanced in General Ledger.`
+              };
+            });
+
+          // Derive Vendor Bills from PURCHASE transactions
+          const mappedBills = transactions
+            .filter(tx => tx.type === 'PURCHASE')
+            .map(tx => {
+              const dt = tx.transactionDate ? tx.transactionDate.slice(0, 10) : new Date().toISOString().slice(0, 10);
+              const due = new Date(new Date(dt).getTime() + 20 * 86400000).toISOString().slice(0, 10);
+              const totalAmt = Number(tx.amount || 0);
+              const isPaid = tx.status === 'PAID';
+              return {
+                id: tx.reference || tx.id,
+                vendorId: tx.contactId,
+                vendorName: tx.contact?.name || 'Vendor Partner',
+                vendorInvoiceNumber: tx.reference || `BILL-${tx.id.slice(-4)}`,
+                date: dt,
+                dueDate: due,
+                items: [
+                  {
+                    description: `Raw Material & Furniture Supply Consignment (${tx.reference || 'Standard'})`,
+                    quantity: 1,
+                    unitPrice: totalAmt,
+                    total: totalAmt
+                  }
+                ],
+                subtotal: totalAmt,
+                tax: 0,
+                total: totalAmt,
+                amountPaid: isPaid ? totalAmt : 0,
+                status: isPaid ? 'Paid' : 'Pending'
+              };
+            });
+
+          // Derive Payments safely from settled PAID transactions
+          const mappedPayments = transactions
+            .filter(tx => tx.status === 'PAID')
+            .map(tx => {
+              const dt = tx.transactionDate ? tx.transactionDate.slice(0, 10) : new Date().toISOString().slice(0, 10);
+              return {
+                id: `PAY-${tx.reference?.replace(/^(INV|BILL)-/, '') || tx.id.slice(-6)}`,
+                date: dt,
+                reference: `NEFT-${tx.reference || tx.id.slice(-6)}`,
+                type: tx.type === 'SALE' ? 'Customer Payment' : 'Vendor Payment',
+                contactId: tx.contactId,
+                contactName: tx.contact?.name || 'Contact Partner',
+                invoiceBillId: tx.reference || tx.id,
+                method: 'Bank',
+                amount: Number(tx.amount || 0),
+                status: 'Completed',
+                notes: `Full electronic settlement for ${tx.reference}`
+              };
+            });
+
           setData(prev => ({
             ...prev,
             transactions: mappedTx,
-            recentTransactions: mappedTx
+            recentTransactions: mappedTx,
+            invoices: mappedInvoices,
+            bills: mappedBills,
+            payments: mappedPayments
           }));
         }
       } catch (err) {
@@ -346,7 +444,7 @@ export const AppProvider = ({ children }) => {
     return true;
   };
 
-  const signup = ({ name, email, password, role = 'Admin', company = 'Urban Furniture' }) => {
+  const signup = ({ name, email, _password, role = 'Admin', company = 'Urban Furniture' }) => {
     const newUser = {
       id: `usr-${Date.now()}`,
       name,
@@ -404,17 +502,6 @@ export const AppProvider = ({ children }) => {
     });
   };
 
-  // Keyboard shortcut Ctrl+K for search
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        setIsSearchOpen(prev => !prev);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
 
   const addToast = (toast) => {
     const id = Date.now().toString() + Math.random().toString().slice(2, 6);
@@ -451,23 +538,68 @@ export const AppProvider = ({ children }) => {
         type: (record.type || 'Customer').toUpperCase(),
         email: record.email || '',
         phone: record.mobile || record.phone || ''
-      }).catch(err => console.warn('[API] Contact sync warning:', err.message));
+      }).catch(err => {
+        console.warn('[API] Contact sync warning:', err.message);
+        addToast({ title: "Sync Notice", message: `Contact saved locally. DB note: ${err.message}`, type: "info" });
+      });
     } else if (collection === 'products') {
       api.createProduct({
         name: record.name,
         sku: record.code || record.sku || `SKU-${Date.now().toString().slice(-4)}`,
         price: Number(record.salesPrice || record.price || 0),
         stock: Number(record.stock || 0)
-      }).catch(err => console.warn('[API] Product sync warning:', err.message));
+      }).catch(err => {
+        console.warn('[API] Product sync warning:', err.message);
+        addToast({ title: "Sync Notice", message: `Product saved locally. DB note: ${err.message}`, type: "info" });
+      });
     } else if (collection === 'transactions' || collection === 'recentTransactions') {
-      api.createTransaction({
-        type: (record.type || 'SALE').toUpperCase() === 'SALES' ? 'SALE' : (record.type || 'SALE').toUpperCase(),
-        reference: record.reference || `TX-${Date.now().toString().slice(-4)}`,
-        contactId: record.contactId,
-        amount: Number(record.amount || 0),
-        status: (record.status || 'PAID').toUpperCase(),
-        transactionDate: record.date || new Date().toISOString()
-      }).catch(err => console.warn('[API] Transaction sync warning:', err.message));
+      const txType = (record.type || 'SALE').toUpperCase() === 'SALES' ? 'SALE' : (record.type || 'SALE').toUpperCase();
+      if (['SALE', 'PURCHASE'].includes(txType) && record.contactId) {
+        api.createTransaction({
+          type: txType,
+          reference: record.reference || `TX-${Date.now().toString().slice(-4)}`,
+          contactId: record.contactId,
+          amount: Number(record.amount || 0),
+          status: (record.status || 'PAID').toUpperCase(),
+          transactionDate: record.date || new Date().toISOString()
+        }).then(res => {
+          if (res?.journalEntry) {
+            const je = res.journalEntry;
+            const mappedJE = {
+              id: je.id,
+              journal: txType === 'SALE' ? 'Sales Journal' : 'Purchase Journal',
+              date: je.transactionDate ? je.transactionDate.slice(0, 10) : new Date().toISOString().slice(0, 10),
+              transactionDate: je.transactionDate,
+              reference: je.reference,
+              description: je.description,
+              lines: (je.items || []).map(i => ({
+                id: i.id,
+                accountName: i.accountName,
+                debit: Number(i.debit),
+                credit: Number(i.credit),
+                description: i.description || ''
+              })),
+              items: (je.items || []).map(i => ({
+                id: i.id,
+                accountName: i.accountName,
+                debit: Number(i.debit),
+                credit: Number(i.credit),
+                description: i.description || ''
+              })),
+              totalDebit: Number(res.amount || 0),
+              totalCredit: Number(res.amount || 0),
+              status: 'Posted'
+            };
+            setData(prev => ({
+              ...prev,
+              journalEntries: [mappedJE, ...(prev.journalEntries || []).filter(e => e.reference !== je.reference && e.id !== je.id)]
+            }));
+          }
+        }).catch(err => {
+          console.warn('[API] Transaction sync warning:', err.message);
+          addToast({ title: "DB Notice", message: `Transaction recorded locally (${err.message})`, type: "info" });
+        });
+      }
     } else if (collection === 'journalEntries') {
       const cleanLines = (record.lines || record.items || []).map(l => ({
         accountName: (l.accountName || 'General Account').trim(),
@@ -491,6 +623,18 @@ export const AppProvider = ({ children }) => {
                     id: res.entry.id,
                     reference: res.entry.reference,
                     transactionDate: res.entry.transactionDate,
+                    lines: (res.entry.items || []).map(i => ({
+                      id: i.id,
+                      accountName: i.accountName,
+                      debit: Number(i.debit),
+                      credit: Number(i.credit)
+                    })),
+                    items: (res.entry.items || []).map(i => ({
+                      id: i.id,
+                      accountName: i.accountName,
+                      debit: Number(i.debit),
+                      credit: Number(i.credit)
+                    })),
                     totalDebit: res.totalDebit !== undefined ? Number(res.totalDebit) : e.totalDebit,
                     totalCredit: res.totalCredit !== undefined ? Number(res.totalCredit) : e.totalCredit
                   }
@@ -498,7 +642,10 @@ export const AppProvider = ({ children }) => {
             )
           }));
         }
-      }).catch(err => console.warn('[API] Journal entry sync warning:', err.message));
+      }).catch(err => {
+        console.warn('[API] Journal entry sync warning:', err.message);
+        addToast({ title: "DB Notice", message: `Journal entry saved locally (${err.message})`, type: "info" });
+      });
     }
 
     return newRecord;
@@ -590,8 +737,6 @@ export const AppProvider = ({ children }) => {
         logout,
         activeContactId,
         setActiveContactId,
-        isSearchOpen,
-        setIsSearchOpen,
         isMobileMenuOpen,
         setIsMobileMenuOpen,
         activeModal,
