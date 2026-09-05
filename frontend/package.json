@@ -1,5 +1,5 @@
 {
-  "name": "frontend",
+  "name": "temp-app",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -10,8 +10,17 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "autoprefixer": "^10.5.5",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.41.0",
+    "postcss": "^8.5.28",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "react-router-dom": "^7.18.3",
+    "recharts": "^3.10.1",
+    "tailwind-merge": "^3.6.0",
+    "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
     "@types/react": "^19.2.18",
