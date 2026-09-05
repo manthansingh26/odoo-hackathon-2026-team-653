@@ -80,9 +80,9 @@ export const Sidebar = ({ onCloseMobile }) => {
             onChange={(e) => setUserRole(e.target.value)}
             className="bg-transparent font-semibold text-neutral-900 focus:outline-none cursor-pointer"
           >
-            <option value="Admin">Admin (Full)</option>
-            <option value="Accountant">Accountant</option>
-            <option value="Contact User">Contact User</option>
+            <option value="Admin">Admin (Aarav Mehta)</option>
+            <option value="Accountant">Accountant (Priya Sharma)</option>
+            <option value="Contact User">Client User (Nimesh Pathak)</option>
           </select>
         </div>
       </div>
@@ -393,14 +393,14 @@ export const Sidebar = ({ onCloseMobile }) => {
         <div className="flex items-center justify-between p-2 rounded-lg bg-white border border-neutral-200 shadow-2xs">
           <div className="flex items-center gap-2.5 overflow-hidden">
             <div className="w-8 h-8 rounded-full bg-neutral-900 text-white flex items-center justify-center text-xs font-bold shrink-0 font-mono">
-              {(currentUser?.name || 'AD').slice(0, 2).toUpperCase()}
+              {((currentUser?.name || (userRole === 'Accountant' ? 'Priya Sharma' : userRole === 'Contact User' ? 'Nimesh Pathak' : 'Aarav Mehta'))).slice(0, 2).toUpperCase()}
             </div>
             <div className="truncate">
               <p className="text-xs font-semibold text-neutral-900 truncate">
-                {currentUser?.name || (userRole === 'Contact User' ? 'Nimesh Pathak' : 'Aarav Mehta')}
+                {currentUser?.name || (userRole === 'Accountant' ? 'Priya Sharma' : userRole === 'Contact User' ? 'Nimesh Pathak' : 'Aarav Mehta')}
               </p>
               <p className="text-[10px] text-neutral-500 truncate">
-                {currentUser?.title || `${userRole} • Urban Furniture`}
+                {currentUser?.title || (userRole === 'Accountant' ? 'Senior Chartered Accountant' : userRole === 'Contact User' ? 'Key Client / Procurement Head' : 'Managing Director & ERP Administrator')}
               </p>
             </div>
           </div>

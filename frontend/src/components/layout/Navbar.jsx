@@ -16,7 +16,8 @@ import {
   Users,
   Package,
   X,
-  LogOut
+  LogOut,
+  Shield
 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { Button } from '../ui/Button';
@@ -306,19 +307,31 @@ export const Navbar = () => {
           )}
         </div>
 
-        {/* User Role Tag & Logout */}
-        <div className="flex items-center gap-1.5 sm:gap-2 pl-1 sm:pl-2 border-l border-neutral-200">
-          <div className="hidden md:flex flex-col items-end">
+        {/* User Role Switcher Dropdown & Logout */}
+        <div className="flex items-center gap-2 pl-2 border-l border-neutral-200">
+          <div className="hidden lg:flex flex-col items-end">
             <span className="text-xs font-bold text-neutral-900 leading-tight">
-              {currentUser?.name || 'Aarav Mehta'}
+              {currentUser?.name || (userRole === 'Accountant' ? 'Priya Sharma' : userRole === 'Contact User' ? 'Nimesh Pathak' : 'Aarav Mehta')}
             </span>
             <span className="text-[10px] text-neutral-500 font-mono">
-              {userRole}
+              {currentUser?.title || userRole}
             </span>
           </div>
-          <Badge variant={userRole === 'Admin' ? 'dark' : userRole === 'Accountant' ? 'default' : 'outline'} className="text-[10px] font-mono hidden sm:inline-flex">
-            {userRole}
-          </Badge>
+
+          <div className="flex items-center gap-1.5 bg-neutral-100 hover:bg-neutral-200/70 border border-neutral-200 px-2 py-1 rounded-lg text-xs transition-colors">
+            <Shield className="w-3.5 h-3.5 text-neutral-600 shrink-0" />
+            <select
+              value={userRole}
+              onChange={(e) => setUserRole(e.target.value)}
+              className="bg-transparent font-bold text-neutral-900 focus:outline-none cursor-pointer text-xs"
+              title="Switch Active Persona"
+            >
+              <option value="Admin">Admin (Aarav Mehta)</option>
+              <option value="Accountant">Accountant (Priya Sharma)</option>
+              <option value="Contact User">Client User (Nimesh Pathak)</option>
+            </select>
+          </div>
+
           <button
             type="button"
             onClick={() => {
