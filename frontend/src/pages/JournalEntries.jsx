@@ -28,31 +28,35 @@ export const JournalEntries = () => {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [reference, setReference] = useState(`JE-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`);
   const [description, setDescription] = useState('');
-  const [lines, setLines] = useState([
-    {
-      accountId: data.accounts[0]?.id || '',
-      accountName: data.accounts[0]?.name || '',
-      description: 'Debit line',
-      debit: 50000,
-      credit: 0
-    },
-    {
-      accountId: data.accounts[1]?.id || '',
-      accountName: data.accounts[1]?.name || '',
-      description: 'Credit line',
-      debit: 0,
-      credit: 50000
-    }
-  ]);
+  const [lines, setLines] = useState(() => {
+    const acc1 = data.accounts?.[0] || { id: 'ACC-1010', name: 'Cash in Hand' };
+    const acc2 = data.accounts?.[1] || { id: 'ACC-4010', name: 'Sales Revenue - Commercial Furniture' };
+    return [
+      {
+        accountId: acc1.id,
+        accountName: acc1.name,
+        description: 'Debit line',
+        debit: 50000,
+        credit: 0
+      },
+      {
+        accountId: acc2.id,
+        accountName: acc2.name,
+        description: 'Credit line',
+        debit: 0,
+        credit: 50000
+      }
+    ];
+  });
 
   const handleAccountChange = (index, accId) => {
-    const acc = data.accounts.find(a => a.id === accId);
+    const acc = (data.accounts || []).find(a => a.id === accId);
     setLines(prev => {
       const copy = [...prev];
       copy[index] = {
         ...copy[index],
         accountId: accId,
-        accountName: acc?.name || ''
+        accountName: acc?.name || copy[index].accountName || 'General Account'
       };
       return copy;
     });
@@ -67,11 +71,12 @@ export const JournalEntries = () => {
   };
 
   const addLine = () => {
+    const defaultAcc = data.accounts?.[0] || { id: 'ACC-1010', name: 'Cash in Hand' };
     setLines(prev => [
       ...prev,
       {
-        accountId: data.accounts[0]?.id || '',
-        accountName: data.accounts[0]?.name || '',
+        accountId: defaultAcc.id,
+        accountName: defaultAcc.name,
         description: '',
         debit: 0,
         credit: 0
@@ -96,19 +101,42 @@ export const JournalEntries = () => {
       return;
     }
 
+    if (!description.trim()) {
+      alert("Validation Error: Voucher Narration / Description is required!");
+      return;
+    }
+
+    const cleanLines = lines.map(l => {
+      const acc = (data.accounts || []).find(a => a.id === l.accountId);
+      return {
+        ...l,
+        accountId: l.accountId || acc?.id || 'ACC-1000',
+        accountName: (l.accountName || acc?.name || 'General Account').trim(),
+        description: l.description || '',
+        debit: Number(l.debit) || 0,
+        credit: Number(l.credit) || 0
+      };
+    });
+
+    const entryRef = reference?.trim() || `JE-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`;
+
     addRecord('journalEntries', {
-      id: reference,
-      journal,
+      id: entryRef,
+      journal: journal || 'General Journal',
       date,
-      reference,
-      description,
-      lines,
+      transactionDate: date ? new Date(date).toISOString() : new Date().toISOString(),
+      reference: entryRef,
+      description: description.trim(),
+      lines: cleanLines,
+      items: cleanLines,
       totalDebit,
       totalCredit,
       status: 'Posted'
     });
 
     setIsCreatorOpen(false);
+    setReference(`JE-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`);
+    setDescription('');
   };
 
   return (
@@ -144,44 +172,53 @@ export const JournalEntries = () => {
           </TableHeader>
           <TableBody>
             {data.journalEntries && data.journalEntries.length > 0 ? (
-              data.journalEntries.map((je) => (
-                <TableRow key={je.id}>
-                  <TableCell className="font-mono font-bold text-xs text-neutral-950">
-                    {je.id}
-                  </TableCell>
-                  <TableCell className="font-mono text-xs text-neutral-600">
-                    {je.date}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{je.journal}</Badge>
-                  </TableCell>
-                  <TableCell className="text-xs text-neutral-800 font-medium max-w-xs truncate">
-                    {je.description}
-                  </TableCell>
-                  <TableCell className="font-mono font-bold text-neutral-900">
-                    {formatINR(je.totalDebit)}
-                  </TableCell>
-                  <TableCell className="font-mono font-bold text-neutral-900">
-                    {formatINR(je.totalCredit)}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="paid">
-                      <CheckCircle2 className="w-3 h-3 mr-1 inline" />
-                      {je.status || 'Posted'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => setViewingEntry(je)}
-                      title="View voucher"
-                    >
-                      <Eye className="w-4 h-4 text-neutral-600" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
+              data.journalEntries.map((je) => {
+                const displayDate = je.transactionDate
+                  ? (typeof je.transactionDate === 'string' ? je.transactionDate.slice(0, 10) : new Date(je.transactionDate).toISOString().slice(0, 10))
+                  : (je.date || '-');
+                const displayRef = je.reference || je.id;
+                const displayDesc = je.description || '-';
+                const displayJournal = je.journal || 'General Journal';
+
+                return (
+                  <TableRow key={je.id}>
+                    <TableCell className="font-mono font-bold text-xs text-neutral-950">
+                      {displayRef}
+                    </TableCell>
+                    <TableCell className="font-mono text-xs text-neutral-600">
+                      {displayDate}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{displayJournal}</Badge>
+                    </TableCell>
+                    <TableCell className="text-xs text-neutral-800 font-medium max-w-xs truncate" title={displayDesc}>
+                      {displayDesc}
+                    </TableCell>
+                    <TableCell className="font-mono font-bold text-neutral-900">
+                      {formatINR(je.totalDebit)}
+                    </TableCell>
+                    <TableCell className="font-mono font-bold text-neutral-900">
+                      {formatINR(je.totalCredit)}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="paid">
+                        <CheckCircle2 className="w-3 h-3 mr-1 inline" />
+                        {je.status || 'Posted'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => setViewingEntry(je)}
+                        title="View voucher"
+                      >
+                        <Eye className="w-4 h-4 text-neutral-600" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             ) : (
               <TableRow>
                 <TableCell colSpan={8} className="text-center py-10 text-neutral-400">
@@ -355,14 +392,18 @@ export const JournalEntries = () => {
         <Modal
           isOpen={true}
           onClose={() => setViewingEntry(null)}
-          title={`Journal Voucher: ${viewingEntry.id}`}
-          subtitle={`Posted in ${viewingEntry.journal} on ${viewingEntry.date}`}
+          title={`Journal Voucher: ${viewingEntry.reference || viewingEntry.id}`}
+          subtitle={`Posted in ${viewingEntry.journal || 'General Journal'} on ${
+            viewingEntry.transactionDate
+              ? (typeof viewingEntry.transactionDate === 'string' ? viewingEntry.transactionDate.slice(0, 10) : new Date(viewingEntry.transactionDate).toISOString().slice(0, 10))
+              : (viewingEntry.date || '-')
+          }`}
           maxWidth="max-w-2xl"
         >
           <div className="space-y-4 text-xs">
             <div className="p-3 bg-neutral-50 rounded-lg border border-neutral-200">
-              <span className="text-[10px] uppercase font-bold text-neutral-400 block">Narration</span>
-              <p className="text-sm font-semibold text-neutral-900 mt-0.5">{viewingEntry.description}</p>
+              <span className="text-[10px] uppercase font-bold text-neutral-400 block">Narration / Description</span>
+              <p className="text-sm font-semibold text-neutral-900 mt-0.5">{viewingEntry.description || '-'}</p>
             </div>
 
             <Table>
@@ -375,15 +416,15 @@ export const JournalEntries = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {viewingEntry.lines.map((l, i) => (
-                  <TableRow key={i}>
-                    <TableCell className="font-medium text-neutral-900">{l.accountName || l.accountId}</TableCell>
+                {(viewingEntry.lines || viewingEntry.items || []).map((l, i) => (
+                  <TableRow key={l.id || i}>
+                    <TableCell className="font-medium text-neutral-900">{l.accountName || l.accountId || 'General Account'}</TableCell>
                     <TableCell className="text-neutral-500">{l.description || '-'}</TableCell>
                     <TableCell className="text-right font-mono font-bold text-neutral-900">
-                      {l.debit > 0 ? formatINR(l.debit) : '-'}
+                      {Number(l.debit) > 0 ? formatINR(Number(l.debit)) : '-'}
                     </TableCell>
                     <TableCell className="text-right font-mono font-bold text-neutral-900">
-                      {l.credit > 0 ? formatINR(l.credit) : '-'}
+                      {Number(l.credit) > 0 ? formatINR(Number(l.credit)) : '-'}
                     </TableCell>
                   </TableRow>
                 ))}

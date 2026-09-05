@@ -11,7 +11,12 @@ export const AppProvider = ({ children }) => {
     const saved = localStorage.getItem('urban_furniture_data_v1');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        // If stored entries have empty lines or 0 totals from previous buggy mappings, restore valid default mock entries
+        if (parsed.journalEntries && parsed.journalEntries.some(e => (!e.lines || e.lines.length === 0) && (!e.items || e.items.length === 0))) {
+          parsed.journalEntries = initialMockData.journalEntries;
+        }
+        return parsed;
       } catch (e) {
         console.error("Could not parse saved local data", e);
       }
@@ -211,23 +216,52 @@ export const AppProvider = ({ children }) => {
       try {
         const entries = await api.getJournalEntries();
         if (isMounted && Array.isArray(entries) && entries.length > 0) {
-          const mappedEntries = entries.map(entry => ({
-            id: entry.id,
-            journal: 'General Journal',
-            date: entry.date ? entry.date.slice(0, 10) : new Date().toISOString().slice(0, 10),
-            reference: entry.reference || entry.entryNumber,
-            description: entry.notes || `Journal Entry ${entry.entryNumber}`,
-            lines: (entry.lines || []).map(l => ({
+          const mappedEntries = entries.map(entry => {
+            const rawDate = entry.transactionDate || entry.date || entry.createdAt || new Date().toISOString();
+            const dateStr = typeof rawDate === 'string' ? rawDate.slice(0, 10) : new Date(rawDate).toISOString().slice(0, 10);
+            
+            // Backend Prisma model returns items array
+            const rawItems = entry.items || entry.lines || [];
+            const mappedLines = rawItems.map(l => ({
+              id: l.id,
               accountId: l.accountId || 'ACC-1000',
-              accountName: l.accountName || l.account?.name || 'Account',
+              accountName: l.accountName || l.account?.name || 'General Account',
               description: l.description || '',
               debit: Number(l.debit || 0),
               credit: Number(l.credit || 0)
-            })),
-            totalDebit: (entry.lines || []).reduce((sum, l) => sum + Number(l.debit || 0), 0),
-            totalCredit: (entry.lines || []).reduce((sum, l) => sum + Number(l.credit || 0), 0),
-            status: 'Posted'
-          }));
+            }));
+
+            const totalDebit = entry.totalDebit !== undefined && Number(entry.totalDebit) > 0
+              ? Number(entry.totalDebit)
+              : mappedLines.reduce((sum, l) => sum + l.debit, 0);
+
+            const totalCredit = entry.totalCredit !== undefined && Number(entry.totalCredit) > 0
+              ? Number(entry.totalCredit)
+              : mappedLines.reduce((sum, l) => sum + l.credit, 0);
+
+            const journalName = entry.journal || (
+              entry.transaction?.type === 'SALE'
+                ? 'Sales Journal'
+                : entry.transaction?.type === 'PURCHASE'
+                ? 'Purchase Journal'
+                : 'General Journal'
+            );
+
+            return {
+              id: entry.id,
+              journal: journalName,
+              date: dateStr,
+              transactionDate: rawDate,
+              reference: entry.reference || entry.entryNumber || entry.id,
+              description: entry.description || entry.notes || `Journal Entry ${entry.reference || entry.id}`,
+              lines: mappedLines,
+              items: mappedLines,
+              totalDebit,
+              totalCredit,
+              status: entry.status || 'Posted'
+            };
+          });
+
           setData(prev => ({
             ...prev,
             journalEntries: mappedEntries
@@ -421,12 +455,35 @@ export const AppProvider = ({ children }) => {
         transactionDate: record.date || new Date().toISOString()
       }).catch(err => console.warn('[API] Transaction sync warning:', err.message));
     } else if (collection === 'journalEntries') {
+      const cleanLines = (record.lines || record.items || []).map(l => ({
+        accountName: (l.accountName || 'General Account').trim(),
+        debit: Number(l.debit || 0),
+        credit: Number(l.credit || 0)
+      }));
+
       api.createJournalEntry({
-        entryNumber: record.id || `JE-${Date.now().toString().slice(-4)}`,
-        date: record.date || new Date().toISOString(),
-        reference: record.reference || '',
-        notes: record.description || '',
-        lines: record.lines || []
+        reference: record.reference || record.id || `JE-${Date.now().toString().slice(-4)}`,
+        description: (record.description || record.notes || 'General Journal Entry').trim(),
+        transactionDate: record.transactionDate || (record.date ? new Date(record.date).toISOString() : new Date().toISOString()),
+        lines: cleanLines
+      }).then(res => {
+        if (res?.entry) {
+          setData(prev => ({
+            ...prev,
+            journalEntries: (prev.journalEntries || []).map(e =>
+              (e.id === record.id || e.reference === record.reference)
+                ? {
+                    ...e,
+                    id: res.entry.id,
+                    reference: res.entry.reference,
+                    transactionDate: res.entry.transactionDate,
+                    totalDebit: res.totalDebit !== undefined ? Number(res.totalDebit) : e.totalDebit,
+                    totalCredit: res.totalCredit !== undefined ? Number(res.totalCredit) : e.totalCredit
+                  }
+                : e
+            )
+          }));
+        }
       }).catch(err => console.warn('[API] Journal entry sync warning:', err.message));
     }
 
