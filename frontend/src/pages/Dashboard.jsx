@@ -34,7 +34,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
 
 export const Dashboard = () => {
-  const { data, userRole, setActiveModal, formatINR } = useAppContext();
+  const { data, userRole, currentUser, setActiveModal, formatINR } = useAppContext();
   const [timeRange, setTimeRange] = useState('This Month');
 
   const { kpi, chartData, recentTransactions } = data;
@@ -44,11 +44,23 @@ export const Dashboard = () => {
       {/* Header section */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-neutral-200">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-neutral-950">
-            Good morning, {userRole === 'Contact User' ? 'Nimesh' : 'Admin'}
-          </h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold tracking-tight text-neutral-950">
+              Good morning, {currentUser?.name || (userRole === 'Accountant' ? 'Priya Sharma' : userRole === 'Contact User' ? 'Nimesh Pathak' : 'Aarav Mehta')}
+            </h1>
+            <Badge
+              variant={userRole === 'Admin' ? 'dark' : userRole === 'Accountant' ? 'default' : 'outline'}
+              className="text-xs font-mono"
+            >
+              {userRole}
+            </Badge>
+          </div>
           <p className="text-sm text-neutral-500 mt-1">
-            Here's what's happening with Urban Furniture today.
+            {userRole === 'Accountant'
+              ? "Financial ledgers, double-entry vouchers, and tax statements."
+              : userRole === 'Contact User'
+              ? "Client portal: active orders, pending invoices, and payment clearances."
+              : "Executive overview: sales turnover, procurement COGS, and audit balance sheets."}
           </p>
         </div>
 
