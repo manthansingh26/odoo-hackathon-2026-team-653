@@ -25,156 +25,41 @@ import {
 import { useAppContext } from '../../context/AppContext';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
+import { PublicNavbar } from '../../components/layout/PublicNavbar';
+import { PublicFooter } from '../../components/layout/PublicFooter';
+import { AuthModal } from '../../components/auth/AuthModal';
 
 export const LandingPage = () => {
-  const { isAuthenticated, currentUser, formatINR, login } = useAppContext();
+  const { isAuthenticated, currentUser, formatINR } = useAppContext();
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState('admin');
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [authModal, setAuthModal] = useState({
+    isOpen: false,
+    tab: 'login', // 'login' | 'signup'
+    role: 'Admin'
+  });
 
-  const handleQuickLaunch = (role = 'Admin') => {
+  const openAuth = (tab = 'login', role = 'Admin') => {
     if (isAuthenticated) {
       navigate('/dashboard');
     } else {
-      navigate('/login', { state: { role } });
+      setAuthModal({
+        isOpen: true,
+        tab,
+        role
+      });
     }
+  };
+
+  const closeAuth = () => {
+    setAuthModal(prev => ({ ...prev, isOpen: false }));
   };
 
   return (
     <div className="min-h-screen bg-white text-neutral-900 selection:bg-neutral-900 selection:text-white font-sans antialiased overflow-x-hidden">
-      {/* --- TOP FIXED & TRANSPARENT BLURRED NAVBAR --- */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white/75 backdrop-blur-md border-b border-neutral-200/80 transition-all">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          {/* Logo Branding */}
-          <Link to="/" className="flex items-center gap-2.5 group shrink-0">
-            <div className="h-8 w-8 rounded-lg bg-neutral-950 text-white flex items-center justify-center text-sm font-black font-mono shadow-xs group-hover:bg-neutral-800 transition-colors">
-              U
-            </div>
-            <div className="flex flex-col">
-              <span className="text-base font-black tracking-widest text-neutral-950 uppercase font-mono">
-                URBAN
-              </span>
-              <span className="text-[8px] font-bold tracking-[0.25em] text-neutral-500 uppercase -mt-1">
-                ACCOUNTING SYSTEM
-              </span>
-            </div>
-          </Link>
-
-          {/* Desktop Center Nav Links */}
-          <nav className="hidden md:flex items-center gap-8 text-xs font-semibold text-neutral-600">
-            <a href="#features" className="hover:text-neutral-950 transition-colors">Features</a>
-            <a href="#metrics" className="hover:text-neutral-950 transition-colors">Metrics</a>
-            <a href="#roles" className="hover:text-neutral-950 transition-colors">Role Architecture</a>
-            <a href="#accounting" className="hover:text-neutral-950 transition-colors">Double-Entry</a>
-          </nav>
-
-          {/* Right Action CTA Buttons (Desktop) */}
-          <div className="hidden md:flex items-center gap-3">
-            {isAuthenticated ? (
-              <Link to="/dashboard">
-                <Button variant="primary" size="sm" className="gap-1.5 text-xs shadow-xs">
-                  <span>Go to Dashboard</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Button>
-              </Link>
-            ) : (
-              <>
-                <Link to="/login">
-                  <Button variant="ghost" size="sm" className="text-xs font-semibold text-neutral-700 hover:text-neutral-950">
-                    Sign In
-                  </Button>
-                </Link>
-                <Link to="/signup">
-                  <Button variant="primary" size="sm" className="gap-1.5 text-xs shadow-xs font-semibold">
-                    <span>Get Started</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </Button>
-                </Link>
-              </>
-            )}
-          </div>
-
-          {/* Mobile Right Controls: Get Started + Hamburger */}
-          <div className="flex md:hidden items-center gap-2">
-            {!isAuthenticated ? (
-              <Link to="/signup">
-                <Button variant="primary" size="sm" className="text-[11px] px-2.5 py-1 font-semibold gap-1">
-                  <span>Get Started</span>
-                  <ArrowRight className="w-3 h-3" />
-                </Button>
-              </Link>
-            ) : (
-              <Link to="/dashboard">
-                <Button variant="primary" size="sm" className="text-[11px] px-2.5 py-1 font-semibold">
-                  Dashboard
-                </Button>
-              </Link>
-            )}
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-1.5 text-neutral-700 hover:text-neutral-950 hover:bg-neutral-100 rounded-md transition-colors cursor-pointer"
-              aria-label="Toggle navigation menu"
-            >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile Dropdown Menu Drawer */}
-        {mobileMenuOpen && (
-          <div className="md:hidden bg-white/95 backdrop-blur-xl border-b border-neutral-200 px-4 py-4 space-y-3 animate-in slide-in-from-top-2 duration-150 shadow-xl">
-            <nav className="flex flex-col space-y-2 text-xs font-semibold text-neutral-700">
-              <a
-                href="#features"
-                onClick={() => setMobileMenuOpen(false)}
-                className="p-2 rounded-md hover:bg-neutral-100 hover:text-neutral-950 transition-colors"
-              >
-                Features
-              </a>
-              <a
-                href="#metrics"
-                onClick={() => setMobileMenuOpen(false)}
-                className="p-2 rounded-md hover:bg-neutral-100 hover:text-neutral-950 transition-colors"
-              >
-                Metrics
-              </a>
-              <a
-                href="#roles"
-                onClick={() => setMobileMenuOpen(false)}
-                className="p-2 rounded-md hover:bg-neutral-100 hover:text-neutral-950 transition-colors"
-              >
-                Role Architecture
-              </a>
-            </nav>
-            <div className="pt-2 border-t border-neutral-100 flex flex-col gap-2">
-              {!isAuthenticated ? (
-                <>
-                  <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant="outline" size="sm" className="w-full text-xs font-semibold">
-                      Sign In
-                    </Button>
-                  </Link>
-                  <Link to="/signup" onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant="primary" size="sm" className="w-full text-xs font-semibold gap-1.5">
-                      <span>Get Started Free</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </Button>
-                  </Link>
-                </>
-              ) : (
-                <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
-                  <Button variant="primary" size="sm" className="w-full text-xs font-semibold gap-1.5">
-                    <span>Open ERP Dashboard</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </Button>
-                </Link>
-              )}
-            </div>
-          </div>
-        )}
-      </header>
+      {/* Top Reusable Public Navbar */}
+      <PublicNavbar onOpenAuth={(tab) => openAuth(tab, 'Admin')} />
 
       {/* --- HERO SECTION (with pt-24 for fixed header) --- */}
       <section className="relative pt-24 pb-16 sm:pt-28 sm:pb-24 bg-[#fafafa] border-b border-neutral-200">
@@ -197,14 +82,18 @@ export const LandingPage = () => {
 
           {/* Action CTAs */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-3">
-            <Link to="/signup">
-              <Button size="lg" variant="primary" className="w-full sm:w-auto px-8 gap-2 font-bold shadow-md">
-                <span>Get Started Now</span>
-                <ArrowRight className="w-4 h-4" />
-              </Button>
-            </Link>
+            <Button
+              size="lg"
+              variant="primary"
+              onClick={() => openAuth('signup')}
+              className="w-full sm:w-auto px-8 gap-2 font-bold shadow-md cursor-pointer"
+            >
+              <span>Get Started Now</span>
+              <ArrowRight className="w-4 h-4" />
+            </Button>
             <button
-              onClick={() => handleQuickLaunch('Admin')}
+              type="button"
+              onClick={() => openAuth('login', 'Admin')}
               className="w-full sm:w-auto inline-flex items-center justify-center font-semibold text-sm px-6 py-2.5 rounded-md border border-neutral-300 bg-white hover:bg-neutral-50 active:bg-neutral-100 text-neutral-900 shadow-2xs transition-colors cursor-pointer gap-2"
             >
               <span>Explore Live Dashboard Demo</span>
@@ -257,7 +146,8 @@ export const LandingPage = () => {
                 </div>
                 <div className="w-full sm:w-auto">
                   <button
-                    onClick={() => handleQuickLaunch('Admin')}
+                    type="button"
+                    onClick={() => openAuth('login', 'Admin')}
                     className="w-full sm:w-auto px-4 py-2 sm:py-1.5 bg-neutral-950 text-white text-xs font-semibold rounded-md shadow-xs hover:bg-neutral-800 transition-colors cursor-pointer text-center"
                   >
                     Open Full ERP
@@ -511,7 +401,7 @@ export const LandingPage = () => {
                   <div className="p-3 bg-white border border-neutral-200 rounded-md font-medium">✓ Contact & Vendor Master</div>
                 </div>
                 <div className="pt-3">
-                  <Button size="sm" variant="primary" onClick={() => handleQuickLaunch('Admin')} className="w-full sm:w-auto font-bold shadow-xs">
+                  <Button size="sm" variant="primary" onClick={() => openAuth('login', 'Admin')} className="w-full sm:w-auto font-bold shadow-xs cursor-pointer">
                     Launch as Admin
                   </Button>
                 </div>
@@ -536,7 +426,7 @@ export const LandingPage = () => {
                   <div className="p-3 bg-white border border-neutral-200 rounded-md text-neutral-400">✗ Settings (Restricted)</div>
                 </div>
                 <div className="pt-3">
-                  <Button size="sm" variant="primary" onClick={() => handleQuickLaunch('Accountant')} className="w-full sm:w-auto font-bold shadow-xs">
+                  <Button size="sm" variant="primary" onClick={() => openAuth('login', 'Accountant')} className="w-full sm:w-auto font-bold shadow-xs cursor-pointer">
                     Launch as Accountant
                   </Button>
                 </div>
@@ -561,7 +451,7 @@ export const LandingPage = () => {
                   <div className="p-3 bg-white border border-neutral-200 rounded-md text-neutral-400">✗ Company P&L (Hidden)</div>
                 </div>
                 <div className="pt-3">
-                  <Button size="sm" variant="primary" onClick={() => handleQuickLaunch('Contact User')} className="w-full sm:w-auto font-bold shadow-xs">
+                  <Button size="sm" variant="primary" onClick={() => openAuth('login', 'Contact User')} className="w-full sm:w-auto font-bold shadow-xs cursor-pointer">
                     Launch as Client User
                   </Button>
                 </div>
@@ -581,13 +471,17 @@ export const LandingPage = () => {
             Launch the Urban Furniture accounting ERP prototype now. Switch between Admin, Accountant, and Client roles with 1 click.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-            <Link to="/signup" className="w-full sm:w-auto">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto bg-white text-neutral-950 hover:bg-neutral-100 font-bold px-8 shadow-sm">
-                Get Started Free
-              </Button>
-            </Link>
+            <Button
+              size="lg"
+              variant="outline"
+              onClick={() => openAuth('signup')}
+              className="w-full sm:w-auto bg-white text-neutral-950 hover:bg-neutral-100 font-bold px-8 shadow-sm cursor-pointer"
+            >
+              Get Started Free
+            </Button>
             <button
-              onClick={() => handleQuickLaunch('Admin')}
+              type="button"
+              onClick={() => openAuth('login', 'Admin')}
               className="w-full sm:w-auto px-8 py-3 text-sm font-semibold rounded-md border border-neutral-700 bg-neutral-900 text-white hover:bg-neutral-800 transition-colors cursor-pointer text-center"
             >
               One-Click Demo Launch
@@ -596,34 +490,16 @@ export const LandingPage = () => {
         </div>
       </section>
 
-      {/* --- RESPONSIVE FOOTER --- */}
-      <footer className="bg-white border-t border-neutral-200 py-10 sm:py-12 text-xs text-neutral-500">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
-          <div className="flex flex-col sm:flex-row items-center gap-2.5">
-            <div className="h-7 w-7 rounded bg-neutral-950 text-white flex items-center justify-center text-xs font-black font-mono">
-              U
-            </div>
-            <div className="flex flex-wrap items-center justify-center gap-1.5 font-medium">
-              <span className="font-bold text-neutral-900">Urban Furniture Pvt. Ltd.</span>
-              <span className="hidden sm:inline">•</span>
-              <span>GSTIN: 27AAACU1234F1Z5</span>
-            </div>
-          </div>
+      {/* Reusable Public Footer */}
+      <PublicFooter onOpenAuth={(tab) => openAuth(tab, 'Admin')} />
 
-          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs font-medium">
-            <a href="#features" className="hover:text-neutral-950 transition-colors">Features</a>
-            <a href="#metrics" className="hover:text-neutral-950 transition-colors">Metrics</a>
-            <a href="#roles" className="hover:text-neutral-950 transition-colors">Roles</a>
-            <Link to="/login" className="hover:text-neutral-950 transition-colors">Sign In</Link>
-            <Link to="/signup" className="hover:text-neutral-950 transition-colors">Register</Link>
-            <Link to={isAuthenticated ? "/dashboard" : "/login"} className="hover:text-neutral-950 transition-colors">ERP Workspace</Link>
-          </div>
-
-          <div className="text-center md:text-right text-[11px] text-neutral-400">
-            &copy; {new Date().getFullYear()} Urban Accounting System. All rights reserved.
-          </div>
-        </div>
-      </footer>
+      {/* Auth Modal Popup Box */}
+      <AuthModal
+        isOpen={authModal.isOpen}
+        onClose={closeAuth}
+        initialTab={authModal.tab}
+        initialRole={authModal.role}
+      />
     </div>
   );
 };

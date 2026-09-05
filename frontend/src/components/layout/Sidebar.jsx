@@ -414,8 +414,8 @@ export const Sidebar = ({ onCloseMobile }) => {
             </button>
             <button
               onClick={() => {
-                navigate('/', { replace: true });
                 logout();
+                navigate('/', { replace: true });
               }}
               title="Sign out to Landing Page"
               className="p-1.5 text-red-600 bg-red-50 hover:bg-red-100 hover:text-red-700 border border-red-200 rounded-md transition-colors cursor-pointer"
