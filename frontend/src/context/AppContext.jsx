@@ -48,21 +48,32 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  // Auth state persisted in localStorage
+  // Clean up legacy v1 auto-auth keys that forced Admin login
+  try {
+    if (localStorage.getItem('urban_furniture_auth_v1')) {
+      localStorage.removeItem('urban_furniture_auth_v1');
+      localStorage.removeItem('urban_furniture_user_v1');
+    }
+  } catch (e) {
+    // ignore
+  }
+
+  // Auth state persisted in localStorage (defaults to logged out)
   const [currentUser, setCurrentUser] = useState(() => {
-    const savedUser = localStorage.getItem('urban_furniture_user_v1');
-    if (savedUser) {
+    const savedUser = localStorage.getItem('urban_furniture_user_v2');
+    const isAuth = localStorage.getItem('urban_furniture_auth_v2') === 'true';
+    if (savedUser && isAuth) {
       try {
         return JSON.parse(savedUser);
       } catch (e) {
         console.error("Could not parse saved user", e);
       }
     }
-    return demoUsers.Admin;
+    return null;
   });
 
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return localStorage.getItem('urban_furniture_auth_v1') !== 'false';
+    return localStorage.getItem('urban_furniture_auth_v2') === 'true' && Boolean(localStorage.getItem('urban_furniture_user_v2'));
   });
 
   // User role: 'Admin' | 'Accountant' | 'Contact User'
@@ -245,14 +256,14 @@ export const AppProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    if (currentUser) {
-      localStorage.setItem('urban_furniture_user_v1', JSON.stringify(currentUser));
-      localStorage.setItem('urban_furniture_auth_v1', 'true');
+    if (currentUser && isAuthenticated) {
+      localStorage.setItem('urban_furniture_user_v2', JSON.stringify(currentUser));
+      localStorage.setItem('urban_furniture_auth_v2', 'true');
     } else {
-      localStorage.removeItem('urban_furniture_user_v1');
-      localStorage.setItem('urban_furniture_auth_v1', 'false');
+      localStorage.removeItem('urban_furniture_user_v2');
+      localStorage.setItem('urban_furniture_auth_v2', 'false');
     }
-  }, [currentUser]);
+  }, [currentUser, isAuthenticated]);
 
   // Synchronized Role Switcher (updates role, active user profile, and contact ID)
   const setUserRole = (newRole) => {
@@ -349,6 +360,9 @@ export const AppProvider = ({ children }) => {
 
   const logout = () => {
     setIsAuthenticated(false);
+    setCurrentUser(null);
+    localStorage.removeItem('urban_furniture_user_v2');
+    localStorage.setItem('urban_furniture_auth_v2', 'false');
     addToast({
       title: "Logged Out",
       message: "You have securely signed out of Urban Furniture ERP.",

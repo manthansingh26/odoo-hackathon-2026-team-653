@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { User, Mail, Lock, Building, ArrowRight, ShieldCheck } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
@@ -6,8 +6,14 @@ import { Button } from '../../components/ui/Button';
 import { Input, Select } from '../../components/ui/Input';
 
 export const Signup = () => {
-  const { signup } = useAppContext();
+  const { signup, isAuthenticated } = useAppContext();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const [formData, setFormData] = useState({
     name: '',
