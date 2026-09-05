@@ -1,21 +1,29 @@
 import React, { useState } from 'react';
-import { Settings as SettingsIcon, Building, Shield, RotateCcw, Check } from 'lucide-react';
+import { Settings as SettingsIcon, Building, Shield, Check } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import { Button } from '../components/ui/Button';
 import { Input, Textarea } from '../components/ui/Input';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 
 export const Settings = () => {
-  const { data, resetAllData, addToast } = useAppContext();
-  const [company, setCompany] = useState(data.company);
+  const { data, updateRecord, addToast } = useAppContext();
+  const [company, setCompany] = useState(data.company || {});
   const [saved, setSaved] = useState(false);
 
   const handleSave = (e) => {
     e.preventDefault();
     setSaved(true);
+    // Persist company details in local state
+    if (typeof updateRecord === 'function') {
+      try {
+        localStorage.setItem('urban_erp_company', JSON.stringify(company));
+      } catch (err) {
+        // ignore localStorage error if storage is unavailable
+      }
+    }
     addToast({
-      title: "Settings Saved",
-      message: "Company legal profile and taxation parameters updated.",
+      title: "Settings Updated",
+      message: "Company profile and statutory parameters updated for current session.",
       type: "success"
     });
     setTimeout(() => setSaved(false), 3000);
@@ -138,18 +146,7 @@ export const Settings = () => {
           </CardContent>
         </Card>
 
-        <div className="flex items-center justify-between pt-2">
-          <Button
-            type="button"
-            variant="destructive"
-            size="sm"
-            onClick={resetAllData}
-            className="gap-1.5"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            Reset All Mock Data
-          </Button>
-
+        <div className="flex items-center justify-end pt-2">
           <Button type="submit" variant="primary" size="sm" className="gap-1.5">
             {saved && <Check className="w-3.5 h-3.5" />}
             {saved ? 'Saved' : 'Save Configurations'}

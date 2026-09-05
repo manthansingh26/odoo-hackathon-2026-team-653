@@ -18,7 +18,7 @@ import { Modal } from '../components/ui/Modal';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 
 export const JournalEntries = () => {
-  const { data, addRecord, formatINR } = useAppContext();
+  const { data, addRecord, formatINR, addToast } = useAppContext();
 
   const [isCreatorOpen, setIsCreatorOpen] = useState(false);
   const [viewingEntry, setViewingEntry] = useState(null);
@@ -97,12 +97,20 @@ export const JournalEntries = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!isBalanced) {
-      alert("Validation Error: Total Debit must equal Total Credit before posting!");
+      addToast({
+        title: "Validation Error",
+        message: "Total Debit must equal Total Credit before posting!",
+        type: "error"
+      });
       return;
     }
 
     if (!description.trim()) {
-      alert("Validation Error: Voucher Narration / Description is required!");
+      addToast({
+        title: "Validation Error",
+        message: "Voucher Narration / Description is required!",
+        type: "error"
+      });
       return;
     }
 

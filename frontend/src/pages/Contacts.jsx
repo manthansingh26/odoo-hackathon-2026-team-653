@@ -117,11 +117,15 @@ export const Contacts = () => {
     return (data.contacts || []).filter((contact) => {
       const matchTab = activeTab === 'All' || contact.type === activeTab;
       const q = searchQuery.toLowerCase();
+      const name = (contact.name || '').toLowerCase();
+      const email = (contact.email || '').toLowerCase();
+      const city = (contact.city || '').toLowerCase();
+      const mobile = (contact.mobile || contact.phone || '');
       const matchSearch =
-        contact.name.toLowerCase().includes(q) ||
-        contact.email.toLowerCase().includes(q) ||
-        contact.city.toLowerCase().includes(q) ||
-        contact.mobile.includes(q);
+        name.includes(q) ||
+        email.includes(q) ||
+        city.includes(q) ||
+        mobile.includes(q);
       return matchTab && matchSearch;
     });
   }, [data.contacts, activeTab, searchQuery]);

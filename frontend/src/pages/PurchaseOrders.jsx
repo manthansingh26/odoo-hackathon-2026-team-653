@@ -123,8 +123,9 @@ export const PurchaseOrders = () => {
       id: `TX-${Date.now()}`,
       date: new Date().toISOString().slice(0, 10),
       reference: billId,
+      contactId: po.vendorId,
       contact: po.vendorName,
-      type: 'Purchase',
+      type: 'PURCHASE',
       amount: po.totalAmount,
       status: 'Pending'
     });

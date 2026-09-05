@@ -10,10 +10,15 @@ export const MyBills = () => {
   const { data, activeContactId, formatINR } = useAppContext();
   const [viewingBill, setViewingBill] = useState(null);
 
-  // In contact user view, if the contact is a vendor or dual partner, show their vendor bills
-  const myBills = (data.bills || []).filter(
-    b => b.vendorId === activeContactId || b.vendorName.toLowerCase().includes('azure') || b.vendorName.toLowerCase().includes('nimesh')
-  );
+  // Filter bills belonging to this active partner
+  const activeContact = (data.contacts || []).find(c => c.id === activeContactId);
+  const activeContactName = (activeContact?.name || '').toLowerCase();
+
+  const myBills = (data.bills || []).filter(b => {
+    if (b.vendorId && b.vendorId === activeContactId) return true;
+    if (activeContactName && (b.vendorName || '').toLowerCase().includes(activeContactName)) return true;
+    return false;
+  });
 
   return (
     <div className="space-y-5">

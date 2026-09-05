@@ -21,15 +21,18 @@ export const LedgerReport = () => {
     (data.journalEntries || []).forEach(je => {
       if (journalFilter !== 'All' && je.journal !== journalFilter) return;
 
-      je.lines.forEach(l => {
+      const entryLines = je.lines || je.items || [];
+      const entryDate = je.transactionDate ? (typeof je.transactionDate === 'string' ? je.transactionDate.slice(0, 10) : new Date(je.transactionDate).toISOString().slice(0, 10)) : (je.date || '-');
+
+      entryLines.forEach(l => {
         if (l.accountId === selectedAccountId || l.accountName === selectedAccount?.name) {
           rawLines.push({
-            date: je.date,
+            date: entryDate,
             reference: je.reference || je.id,
-            journal: je.journal,
-            description: l.description || je.description,
-            debit: l.debit || 0,
-            credit: l.credit || 0
+            journal: je.journal || 'General Journal',
+            description: l.description || je.description || `Entry for ${l.accountName}`,
+            debit: Number(l.debit) || 0,
+            credit: Number(l.credit) || 0
           });
         }
       });

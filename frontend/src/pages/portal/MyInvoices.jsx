@@ -10,10 +10,15 @@ export const MyInvoices = () => {
   const { data, activeContactId, formatINR, updateRecord } = useAppContext();
   const [viewingInvoice, setViewingInvoice] = useState(null);
 
-  // Filter only invoices belonging to this client (or match Nimesh Pathak C-101)
-  const myInvoices = (data.invoices || []).filter(
-    inv => inv.contactId === activeContactId || inv.customerName.toLowerCase().includes('nimesh')
-  );
+  // Filter only invoices belonging to this active client
+  const activeContact = (data.contacts || []).find(c => c.id === activeContactId);
+  const activeContactName = (activeContact?.name || '').toLowerCase();
+
+  const myInvoices = (data.invoices || []).filter(inv => {
+    if (inv.contactId && inv.contactId === activeContactId) return true;
+    if (activeContactName && (inv.customerName || '').toLowerCase().includes(activeContactName)) return true;
+    return false;
+  });
 
   const handlePayNow = (inv) => {
     updateRecord('invoices', inv.id, {

@@ -131,10 +131,13 @@ export const Products = () => {
     return (data.products || []).filter((p) => {
       const matchCat = activeCategory === 'All' || p.category === activeCategory;
       const q = searchQuery.toLowerCase();
+      const name = (p.name || '').toLowerCase();
+      const code = (p.code || p.sku || '').toLowerCase();
+      const category = (p.category || '').toLowerCase();
       const matchSearch =
-        p.name.toLowerCase().includes(q) ||
-        p.code.toLowerCase().includes(q) ||
-        p.category.toLowerCase().includes(q);
+        name.includes(q) ||
+        code.includes(q) ||
+        category.includes(q);
       return matchCat && matchSearch;
     });
   }, [data.products, activeCategory, searchQuery]);

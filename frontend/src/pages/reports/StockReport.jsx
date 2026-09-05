@@ -12,13 +12,14 @@ export const StockReport = () => {
 
   // Valuation calculation
   const totalValuation = products.reduce((acc, p) => {
-    if (p.stock === null) return acc;
-    return acc + (p.stock * p.purchasePrice);
+    if (p.stock === null || p.stock === undefined) return acc;
+    const cost = Number(p.purchasePrice !== undefined ? p.purchasePrice : (Number(p.salesPrice || 0) * 0.7));
+    return acc + (Number(p.stock || 0) * cost);
   }, 0);
 
   const totalRetailPotential = products.reduce((acc, p) => {
-    if (p.stock === null) return acc;
-    return acc + (p.stock * p.salesPrice);
+    if (p.stock === null || p.stock === undefined) return acc;
+    return acc + (Number(p.stock || 0) * Number(p.salesPrice || 0));
   }, 0);
 
   const lowStockCount = products.filter(p => p.stock !== null && p.stock > 0 && p.stock <= (p.minStock || 5)).length;

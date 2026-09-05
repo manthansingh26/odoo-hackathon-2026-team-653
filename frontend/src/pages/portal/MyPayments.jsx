@@ -7,9 +7,14 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '.
 export const MyPayments = () => {
   const { data, activeContactId, formatINR } = useAppContext();
 
-  const myPayments = (data.payments || []).filter(
-    p => p.contactId === activeContactId || p.contactName.toLowerCase().includes('nimesh')
-  );
+  const activeContact = (data.contacts || []).find(c => c.id === activeContactId);
+  const activeContactName = (activeContact?.name || '').toLowerCase();
+
+  const myPayments = (data.payments || []).filter(p => {
+    if (p.contactId && p.contactId === activeContactId) return true;
+    if (activeContactName && (p.contactName || '').toLowerCase().includes(activeContactName)) return true;
+    return false;
+  });
 
   return (
     <div className="space-y-5">

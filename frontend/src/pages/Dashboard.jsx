@@ -1,18 +1,11 @@
 import React, { useState } from 'react';
 import {
   TrendingUp,
-  TrendingDown,
   DollarSign,
   ShoppingCart,
-  Users,
-  Package,
   Plus,
-  ArrowUpRight,
-  ArrowDownRight,
   CreditCard,
-  FileText,
-  Calendar,
-  Filter
+  Calendar
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -34,10 +27,42 @@ import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
 
 export const Dashboard = () => {
-  const { data, userRole, setActiveModal, formatINR } = useAppContext();
+  const { data, userRole, currentUser, setActiveModal, formatINR } = useAppContext();
   const [timeRange, setTimeRange] = useState('This Month');
+  const [activeTableTab, setActiveTableTab] = useState('transactions'); // 'transactions' | 'journalEntries'
 
-  const { kpi, chartData, recentTransactions } = data;
+  const { kpi, chartData, recentTransactions, journalEntries } = data;
+
+  // Filter transactions dynamically based on selected timeRange
+  const filteredTransactions = React.useMemo(() => {
+    if (!recentTransactions || recentTransactions.length === 0) return [];
+    if (timeRange === 'All' || timeRange === 'Fiscal Year 2026-27') return recentTransactions;
+
+    const sorted = [...recentTransactions].sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+    if (sorted.length === 0) return [];
+
+    const latestDate = new Date(sorted[0].date || '2026-09-05');
+
+    if (timeRange === 'Today') {
+      const targetStr = latestDate.toISOString().slice(0, 10);
+      return sorted.filter(t => (t.date || '').slice(0, 10) === targetStr);
+    }
+    if (timeRange === 'This Week') {
+      const weekAgo = new Date(latestDate.getTime() - 7 * 86400000);
+      return sorted.filter(t => new Date(t.date || 0) >= weekAgo);
+    }
+    if (timeRange === 'This Month') {
+      const monthPrefix = latestDate.toISOString().slice(0, 7);
+      return sorted.filter(t => (t.date || '').startsWith(monthPrefix));
+    }
+    if (timeRange === 'Q2 FY 2026') {
+      return sorted.filter(t => {
+        const d = (t.date || '').slice(0, 10);
+        return d >= '2026-07-01' && d <= '2026-09-30';
+      });
+    }
+    return sorted;
+  }, [recentTransactions, timeRange]);
 
   return (
     <div className="space-y-6">
@@ -45,10 +70,10 @@ export const Dashboard = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-neutral-200">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-neutral-950">
-            Good morning, {userRole === 'Contact User' ? 'Nimesh' : 'Admin'}
+            Good day, {currentUser?.name ? currentUser.name.split(' ')[0] : 'Finance Team'}
           </h1>
           <p className="text-sm text-neutral-500 mt-1">
-            Here's what's happening with Urban Furniture today.
+            Enterprise overview and double-entry accounting status for Urban Furniture.
           </p>
         </div>
 
@@ -286,76 +311,166 @@ export const Dashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Recent Transactions Table (Section 7) */}
+      {/* Recent Ledger & Double-Entry Activity */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <CardTitle>Recent Accounting Transactions</CardTitle>
+            <CardTitle>
+              {activeTableTab === 'transactions' ? 'Recent Accounting Transactions' : 'Recent Journal Vouchers (Double-Entry)'}
+            </CardTitle>
             <p className="text-xs text-neutral-500 mt-0.5">
-              Latest invoices, bills, and payments recorded in Urban Furniture ledger
+              {activeTableTab === 'transactions'
+                ? 'Latest sales invoices, purchase bills, and cash flows recorded in ledger'
+                : 'Balanced debit and credit voucher records posted to PostgreSQL'}
             </p>
+          </div>
+          <div className="flex items-center bg-neutral-100 p-1 rounded-lg border border-neutral-200 text-xs">
+            <button
+              type="button"
+              onClick={() => setActiveTableTab('transactions')}
+              className={`px-3 py-1.5 rounded-md font-semibold transition-all cursor-pointer ${
+                activeTableTab === 'transactions'
+                  ? 'bg-white text-neutral-950 shadow-xs'
+                  : 'text-neutral-600 hover:text-neutral-950'
+              }`}
+            >
+              Transactions ({filteredTransactions?.length || 0})
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTableTab('journalEntries')}
+              className={`px-3 py-1.5 rounded-md font-semibold transition-all cursor-pointer ${
+                activeTableTab === 'journalEntries'
+                  ? 'bg-white text-neutral-950 shadow-xs'
+                  : 'text-neutral-600 hover:text-neutral-950'
+              }`}
+            >
+              Journal Vouchers ({journalEntries?.length || 0})
+            </button>
           </div>
         </CardHeader>
         <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Reference</TableHead>
-                <TableHead>Contact Party</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Method</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {recentTransactions && recentTransactions.length > 0 ? (
-                recentTransactions.map((tx) => {
-                  let badgeVariant = 'default';
-                  if (tx.status === 'Paid' || tx.status === 'Completed') badgeVariant = 'paid';
-                  else if (tx.status === 'Pending') badgeVariant = 'pending';
-                  else if (tx.status === 'Overdue') badgeVariant = 'overdue';
-
-                  return (
-                    <TableRow key={tx.id}>
-                      <TableCell className="font-mono text-xs text-neutral-600">
-                        {tx.date}
-                      </TableCell>
-                      <TableCell className="font-semibold text-neutral-950 font-mono text-xs">
-                        {tx.reference}
-                      </TableCell>
-                      <TableCell className="font-medium text-neutral-900">
-                        {tx.contact}
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-xs px-2 py-0.5 bg-neutral-100 rounded-md font-medium text-neutral-700">
-                          {tx.type}
-                        </span>
-                      </TableCell>
-                      <TableCell className="font-mono font-semibold text-neutral-950">
-                        {formatINR(tx.amount)}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={badgeVariant}>
-                          {tx.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-xs text-neutral-500">
-                        {tx.paymentMethod || 'Bank'}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              ) : (
+          {activeTableTab === 'transactions' ? (
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-6 text-neutral-400">
-                    No transactions found.
-                  </TableCell>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Reference</TableHead>
+                  <TableHead>Contact Party</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Method</TableHead>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredTransactions && filteredTransactions.length > 0 ? (
+                  filteredTransactions.map((tx) => {
+                    let badgeVariant = 'default';
+                    if (tx.status === 'Paid' || tx.status === 'Completed') badgeVariant = 'paid';
+                    else if (tx.status === 'Pending') badgeVariant = 'pending';
+                    else if (tx.status === 'Overdue') badgeVariant = 'overdue';
+
+                    return (
+                      <TableRow key={tx.id}>
+                        <TableCell className="font-mono text-xs text-neutral-600">
+                          {tx.date}
+                        </TableCell>
+                        <TableCell className="font-semibold text-neutral-950 font-mono text-xs">
+                          {tx.reference}
+                        </TableCell>
+                        <TableCell className="font-medium text-neutral-900">
+                          {tx.contact}
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-xs px-2 py-0.5 bg-neutral-100 rounded-md font-medium text-neutral-700">
+                            {tx.type}
+                          </span>
+                        </TableCell>
+                        <TableCell className="font-mono font-semibold text-neutral-950">
+                          {formatINR(tx.amount)}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={badgeVariant}>
+                            {tx.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-xs text-neutral-500">
+                          {tx.paymentMethod || 'Bank'}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-6 text-neutral-400">
+                      No transactions recorded yet.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Voucher Ref</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Journal</TableHead>
+                  <TableHead>Narration</TableHead>
+                  <TableHead>Debit (₹)</TableHead>
+                  <TableHead>Credit (₹)</TableHead>
+                  <TableHead>Balance Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {journalEntries && journalEntries.length > 0 ? (
+                  journalEntries.map((je) => {
+                    const dateStr = je.transactionDate
+                      ? (typeof je.transactionDate === 'string' ? je.transactionDate.slice(0, 10) : new Date(je.transactionDate).toISOString().slice(0, 10))
+                      : (je.date || '-');
+                    const isBalanced = Number(je.totalDebit) > 0 && Math.abs(Number(je.totalDebit) - Number(je.totalCredit)) < 1;
+
+                    return (
+                      <TableRow key={je.id}>
+                        <TableCell className="font-mono font-semibold text-xs text-neutral-950">
+                          {je.reference || je.id}
+                        </TableCell>
+                        <TableCell className="font-mono text-xs text-neutral-600">
+                          {dateStr}
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-xs px-2 py-0.5 bg-neutral-100 rounded-md font-medium text-neutral-700">
+                            {je.journal || 'General Journal'}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-neutral-800 text-xs max-w-xs truncate">
+                          {je.description || '-'}
+                        </TableCell>
+                        <TableCell className="font-mono font-semibold text-neutral-950 text-xs">
+                          {formatINR(je.totalDebit || 0)}
+                        </TableCell>
+                        <TableCell className="font-mono font-semibold text-neutral-950 text-xs">
+                          {formatINR(je.totalCredit || 0)}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={isBalanced ? 'paid' : 'loss'}>
+                            {isBalanced ? 'Balanced' : 'Unbalanced'}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-6 text-neutral-400">
+                      No journal entries recorded yet.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          )}
         </div>
       </Card>
     </div>

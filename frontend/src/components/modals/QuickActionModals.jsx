@@ -10,8 +10,7 @@ export const QuickActionModals = () => {
     activeModal,
     setActiveModal,
     data,
-    addRecord,
-    formatINR
+    addRecord
   } = useAppContext();
 
   if (!activeModal) return null;
@@ -139,13 +138,14 @@ const InvoiceModal = ({ onClose, data, addRecord }) => {
       notes
     });
 
-    // Also add to recent transactions
+    // Also add to recent transactions with contactId for PostgreSQL API persistence
     addRecord('recentTransactions', {
       id: `TX-${Date.now()}`,
       date,
       reference: invoiceId,
+      contactId,
       contact: contact?.name || 'Unknown',
-      type: 'Sales',
+      type: 'SALE',
       amount: Math.round(grandTotal),
       status: 'Pending'
     });
@@ -330,8 +330,9 @@ const BillModal = ({ onClose, data, addRecord }) => {
       id: `TX-${Date.now()}`,
       date,
       reference: billId,
+      contactId: vendorId,
       contact: vendor?.name || 'Vendor',
-      type: 'Purchase',
+      type: 'PURCHASE',
       amount: Number(amount),
       status: 'Pending'
     });
@@ -409,16 +410,6 @@ const PaymentModal = ({ onClose, data, addRecord }) => {
       amount: Number(amount),
       status: 'Completed',
       notes
-    });
-
-    addRecord('recentTransactions', {
-      id: `TX-${Date.now()}`,
-      date,
-      reference: payId,
-      contact: contact?.name || 'Contact',
-      type: 'Payment',
-      amount: Number(amount),
-      status: 'Completed'
     });
 
     onClose();

@@ -95,7 +95,9 @@ export const ChartOfAccounts = () => {
     categoriesList.forEach(cat => { map[cat] = []; });
 
     (data.accounts || []).forEach(acc => {
-      const matchSearch = acc.name.toLowerCase().includes(q) || acc.code.includes(q);
+      const name = (acc.name || '').toLowerCase();
+      const code = (acc.code || '');
+      const matchSearch = name.includes(q) || code.includes(q);
       if (matchSearch) {
         const cat = acc.category || 'Assets';
         if (!map[cat]) map[cat] = [];
