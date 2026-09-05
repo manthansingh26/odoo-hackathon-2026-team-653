@@ -7,7 +7,7 @@ import { ProductsPage } from './pages/ProductsPage'
 import { TransactionsPage } from './pages/TransactionsPage'
 import { JournalPage } from './pages/JournalPage'
 import { PlaceholderPage } from './pages/PlaceholderPage'
-import { api } from './lib/api'
+import { api } from './services/api'
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard')
