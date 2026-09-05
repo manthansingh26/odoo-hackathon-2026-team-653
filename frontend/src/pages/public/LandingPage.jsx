@@ -34,8 +34,11 @@ export const LandingPage = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleQuickLaunch = (role = 'Admin') => {
-    login('admin@urbanfurniture.in', 'password123', role);
-    navigate('/dashboard');
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    } else {
+      navigate('/login', { state: { role } });
+    }
   };
 
   return (
@@ -613,7 +616,7 @@ export const LandingPage = () => {
             <a href="#roles" className="hover:text-neutral-950 transition-colors">Roles</a>
             <Link to="/login" className="hover:text-neutral-950 transition-colors">Sign In</Link>
             <Link to="/signup" className="hover:text-neutral-950 transition-colors">Register</Link>
-            <Link to="/dashboard" className="hover:text-neutral-950 transition-colors">ERP Workspace</Link>
+            <Link to={isAuthenticated ? "/dashboard" : "/login"} className="hover:text-neutral-950 transition-colors">ERP Workspace</Link>
           </div>
 
           <div className="text-center md:text-right text-[11px] text-neutral-400">

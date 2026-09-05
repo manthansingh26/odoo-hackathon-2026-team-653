@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Shield, Lock, Mail, ArrowRight, UserCheck, CheckCircle2 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { Button } from '../../components/ui/Button';
@@ -7,12 +7,30 @@ import { Input, Select } from '../../components/ui/Input';
 import { Badge } from '../../components/ui/Badge';
 
 export const Login = () => {
-  const { login, demoUsers } = useAppContext();
+  const { login, demoUsers, isAuthenticated } = useAppContext();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const [email, setEmail] = useState('admin@urbanfurniture.in');
+  const initialRole = location.state?.role && demoUsers[location.state.role] ? location.state.role : 'Admin';
+  const [selectedRole, setSelectedRole] = useState(initialRole);
+  const [email, setEmail] = useState(demoUsers[initialRole]?.email || 'admin@urbanfurniture.in');
   const [password, setPassword] = useState('password123');
-  const [selectedRole, setSelectedRole] = useState('Admin');
+
+  // If already logged in, redirect to dashboard
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
+
+  // Handle route state updates
+  useEffect(() => {
+    if (location.state?.role && demoUsers[location.state.role]) {
+      const role = location.state.role;
+      setSelectedRole(role);
+      setEmail(demoUsers[role].email);
+    }
+  }, [location.state, demoUsers]);
 
   // Quick 1-click demo login
   const handleQuickDemo = (roleKey) => {
@@ -20,11 +38,7 @@ export const Login = () => {
     setEmail(demo.email);
     setSelectedRole(roleKey);
     login(demo.email, 'password123', roleKey);
-    if (roleKey === 'Contact User') {
-      navigate('/dashboard');
-    } else {
-      navigate('/dashboard');
-    }
+    navigate('/dashboard');
   };
 
   const handleSubmit = (e) => {
