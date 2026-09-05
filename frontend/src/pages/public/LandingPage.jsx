@@ -34,7 +34,6 @@ export const LandingPage = () => {
   const { isAuthenticated, currentUser, formatINR } = useAppContext();
   const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState('admin');
   const [isDoubleEntryOpen, setIsDoubleEntryOpen] = useState(false);
   const [authModal, setAuthModal] = useState({
     isOpen: false,
@@ -442,133 +441,6 @@ export const LandingPage = () => {
           </div>
         </div>
       </section>
-
-      {/* --- ROLE ARCHITECTURE SECTION --- */}
-      <section id="roles" className="py-20 bg-white border-b border-neutral-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          <div className="text-center max-w-2xl mx-auto space-y-3">
-            <h2 className="text-3xl sm:text-4xl font-black text-neutral-950 tracking-tight">
-              Three Dedicated Role Workspaces
-            </h2>
-            <p className="text-sm text-neutral-500">
-              Each user persona receives an isolated, tailored experience with zero access leaks.
-            </p>
-
-            {/* Tabs (Fully responsive flex-wrap) */}
-            <div className="flex flex-wrap items-center justify-center gap-2 pt-4">
-              <button
-                onClick={() => setActiveTab('admin')}
-                className={`w-full sm:w-auto px-4 py-2.5 sm:py-2 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
-                  activeTab === 'admin'
-                    ? 'bg-neutral-950 text-white border-neutral-950 shadow-xs'
-                    : 'bg-neutral-50 text-neutral-700 border-neutral-200 hover:bg-neutral-100'
-                }`}
-              >
-                1. Managing Director (Admin)
-              </button>
-              <button
-                onClick={() => setActiveTab('accountant')}
-                className={`w-full sm:w-auto px-4 py-2.5 sm:py-2 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
-                  activeTab === 'accountant'
-                    ? 'bg-neutral-950 text-white border-neutral-950 shadow-xs'
-                    : 'bg-neutral-50 text-neutral-700 border-neutral-200 hover:bg-neutral-100'
-                }`}
-              >
-                2. Chartered Accountant
-              </button>
-              <button
-                onClick={() => setActiveTab('client')}
-                className={`w-full sm:w-auto px-4 py-2.5 sm:py-2 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
-                  activeTab === 'client'
-                    ? 'bg-neutral-950 text-white border-neutral-950 shadow-xs'
-                    : 'bg-neutral-50 text-neutral-700 border-neutral-200 hover:bg-neutral-100'
-                }`}
-              >
-                3. Client Portal (Customer)
-              </button>
-            </div>
-          </div>
-
-          {/* Active Tab Panel */}
-          <div className="max-w-4xl mx-auto p-5 sm:p-8 bg-[#fafafa] rounded-2xl border border-neutral-200 shadow-xs">
-            {activeTab === 'admin' && (
-              <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                  <h3 className="text-base sm:text-lg font-bold text-neutral-950">Admin Perspective: Complete Unrestricted Oversight</h3>
-                  <Badge variant="dark" className="self-start sm:self-auto shrink-0">Full Access</Badge>
-                </div>
-                <p className="text-xs text-neutral-600 leading-relaxed">
-                  Managing directors and company partners have total command over chart of accounts, master journals, system taxation parameters, P&L statements, balance sheets, and user roles.
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 pt-2 text-xs">
-                  <div className="p-3 bg-white border border-neutral-200 rounded-md font-medium">✓ System Settings & GSTIN</div>
-                  <div className="p-3 bg-white border border-neutral-200 rounded-md font-medium">✓ Profit & Loss Reporting</div>
-                  <div className="p-3 bg-white border border-neutral-200 rounded-md font-medium">✓ Balance Sheet Equation</div>
-                  <div className="p-3 bg-white border border-neutral-200 rounded-md font-medium">✓ Double-Entry Journal Posting</div>
-                  <div className="p-3 bg-white border border-neutral-200 rounded-md font-medium">✓ CapEx Budget Control</div>
-                  <div className="p-3 bg-white border border-neutral-200 rounded-md font-medium">✓ Contact & Vendor Master</div>
-                </div>
-                <div className="pt-3">
-                  <Button size="sm" variant="primary" onClick={() => openAuth('login', 'Admin')} className="w-full sm:w-auto font-bold shadow-xs cursor-pointer">
-                    Launch as Admin
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'accountant' && (
-              <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                  <h3 className="text-base sm:text-lg font-bold text-neutral-950">Accountant Perspective: Bookkeeping & General Ledgers</h3>
-                  <Badge variant="default" className="self-start sm:self-auto shrink-0">Accounting & Audit</Badge>
-                </div>
-                <p className="text-xs text-neutral-600 leading-relaxed">
-                  Chartered accountants and finance managers can post double-entry vouchers, reconcile vendor bills, record client NEFT payments, and audit running ledger balances.
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 pt-2 text-xs">
-                  <div className="p-3 bg-white border border-neutral-200 rounded-md font-medium">✓ Double-Entry Journal Entries</div>
-                  <div className="p-3 bg-white border border-neutral-200 rounded-md font-medium">✓ Running Ledger Balances</div>
-                  <div className="p-3 bg-white border border-neutral-200 rounded-md font-medium">✓ Sales & Purchase Postings</div>
-                  <div className="p-3 bg-white border border-neutral-200 rounded-md font-medium">✓ Bank & Cash Reconciliation</div>
-                  <div className="p-3 bg-white border border-neutral-200 rounded-md font-medium">✓ Inventory Valuation</div>
-                  <div className="p-3 bg-white border border-neutral-200 rounded-md text-neutral-400">✗ Settings (Restricted)</div>
-                </div>
-                <div className="pt-3">
-                  <Button size="sm" variant="primary" onClick={() => openAuth('login', 'Accountant')} className="w-full sm:w-auto font-bold shadow-xs cursor-pointer">
-                    Launch as Accountant
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'client' && (
-              <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                  <h3 className="text-base sm:text-lg font-bold text-neutral-950">Client Portal: Clean Customer & Vendor Interface</h3>
-                  <Badge variant="outline" className="self-start sm:self-auto shrink-0">Client View</Badge>
-                </div>
-                <p className="text-xs text-neutral-600 leading-relaxed">
-                  B2B corporate clients and timber suppliers only see their personal invoices, bills, clearance receipts, and billing profile. Private company ledgers are completely hidden.
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 pt-2 text-xs">
-                  <div className="p-3 bg-white border border-neutral-200 rounded-md font-medium">✓ My Invoices & Pay Now</div>
-                  <div className="p-3 bg-white border border-neutral-200 rounded-md font-medium">✓ My Vendor Bills</div>
-                  <div className="p-3 bg-white border border-neutral-200 rounded-md font-medium">✓ Payment Clearance Log</div>
-                  <div className="p-3 bg-white border border-neutral-200 rounded-md font-medium">✓ Company Billing Profile</div>
-                  <div className="p-3 bg-white border border-neutral-200 rounded-md text-neutral-400">✗ General Ledger (Hidden)</div>
-                  <div className="p-3 bg-white border border-neutral-200 rounded-md text-neutral-400">✗ Company P&L (Hidden)</div>
-                </div>
-                <div className="pt-3">
-                  <Button size="sm" variant="primary" onClick={() => openAuth('login', 'Contact User')} className="w-full sm:w-auto font-bold shadow-xs cursor-pointer">
-                    Launch as Client User
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-
       {/* --- CALL TO ACTION BANNER --- */}
       <section className="py-16 sm:py-20 bg-neutral-950 text-white">
         <div className="max-w-4xl mx-auto px-4 text-center space-y-6">
@@ -576,7 +448,7 @@ export const LandingPage = () => {
             Ready to experience next-generation accounting?
           </h2>
           <p className="text-sm sm:text-base text-neutral-400 max-w-xl mx-auto">
-            Launch the Urban Furniture accounting ERP prototype now. Switch between Admin, Accountant, and Client roles with 1 click.
+            Experience the Urban Furniture accounting ERP workspace for modern furniture businesses.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
             <Button
@@ -587,13 +459,6 @@ export const LandingPage = () => {
             >
               Get Started Free
             </Button>
-            <button
-              type="button"
-              onClick={() => openAuth('login', 'Admin')}
-              className="w-full sm:w-auto px-8 py-3 text-sm font-semibold rounded-md border border-neutral-700 bg-neutral-900 text-white hover:bg-neutral-800 transition-colors cursor-pointer text-center"
-            >
-              One-Click Demo Launch
-            </button>
           </div>
         </div>
       </section>

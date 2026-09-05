@@ -58,7 +58,6 @@ export const PublicNavbar = ({ onOpenAuth, onOpenDoubleEntry }) => {
         <nav className="hidden md:flex items-center gap-8 text-xs font-semibold text-neutral-600">
           <a href="/#features" className="hover:text-neutral-950 transition-colors">Features</a>
           <a href="/#metrics" className="hover:text-neutral-950 transition-colors">Metrics</a>
-          <a href="/#roles" className="hover:text-neutral-950 transition-colors">Role Architecture</a>
           <a
             href="/#accounting"
             onClick={handleDoubleEntry}
@@ -144,13 +143,6 @@ export const PublicNavbar = ({ onOpenAuth, onOpenDoubleEntry }) => {
               className="p-2 rounded-md hover:bg-neutral-100 hover:text-neutral-950 transition-colors"
             >
               Metrics
-            </a>
-            <a
-              href="/#roles"
-              onClick={() => setMobileMenuOpen(false)}
-              className="p-2 rounded-md hover:bg-neutral-100 hover:text-neutral-950 transition-colors"
-            >
-              Role Architecture
             </a>
             <a
               href="/#accounting"

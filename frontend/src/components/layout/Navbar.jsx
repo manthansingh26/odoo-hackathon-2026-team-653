@@ -4,23 +4,13 @@ import {
   Menu,
   Search,
   Bell,
-  Plus,
   CheckCircle2,
   AlertTriangle,
   Info,
-  ChevronDown,
-  User,
-  Receipt,
-  ShoppingCart,
-  CreditCard,
-  Users,
-  Package,
   X,
-  LogOut,
-  Shield
+  LogOut
 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
-import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 
 export const Navbar = () => {
@@ -30,29 +20,22 @@ export const Navbar = () => {
     data,
     currentUser,
     userRole,
-    setUserRole,
     setIsSearchOpen,
     isMobileMenuOpen,
     setIsMobileMenuOpen,
-    setActiveModal,
     markNotificationRead,
     clearAllNotifications,
     logout
   } = useAppContext();
 
   const [isNotifOpen, setIsNotifOpen] = useState(false);
-  const [isQuickActionOpen, setIsQuickActionOpen] = useState(false);
   const notifRef = useRef(null);
-  const quickRef = useRef(null);
 
   // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (notifRef.current && !notifRef.current.contains(e.target)) {
         setIsNotifOpen(false);
-      }
-      if (quickRef.current && !quickRef.current.contains(e.target)) {
-        setIsQuickActionOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -143,82 +126,6 @@ export const Navbar = () => {
           <Search className="w-4 h-4" />
         </button>
 
-        {/* Quick Actions Dropdown (Only for Admin & Accountant) */}
-        {userRole !== 'Contact User' && (
-          <div className="relative" ref={quickRef}>
-            <Button
-              size="sm"
-              variant="primary"
-              onClick={() => setIsQuickActionOpen(!isQuickActionOpen)}
-              className="gap-1.5 text-xs shadow-xs"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">New</span>
-            </Button>
-
-            {isQuickActionOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-neutral-200 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100 text-left">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsQuickActionOpen(false);
-                    setActiveModal({ type: 'NEW_INVOICE' });
-                  }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900 transition-colors"
-                >
-                  <Receipt className="w-3.5 h-3.5 text-neutral-500" />
-                  <span>New Customer Invoice</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsQuickActionOpen(false);
-                    setActiveModal({ type: 'NEW_BILL' });
-                  }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900 transition-colors"
-                >
-                  <ShoppingCart className="w-3.5 h-3.5 text-neutral-500" />
-                  <span>New Vendor Bill</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsQuickActionOpen(false);
-                    setActiveModal({ type: 'NEW_PAYMENT' });
-                  }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900 transition-colors"
-                >
-                  <CreditCard className="w-3.5 h-3.5 text-neutral-500" />
-                  <span>Record Payment</span>
-                </button>
-                <div className="my-1 border-t border-neutral-100" />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsQuickActionOpen(false);
-                    setActiveModal({ type: 'ADD_CONTACT' });
-                  }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900 transition-colors"
-                >
-                  <Users className="w-3.5 h-3.5 text-neutral-500" />
-                  <span>Add Contact</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsQuickActionOpen(false);
-                    setActiveModal({ type: 'ADD_PRODUCT' });
-                  }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900 transition-colors"
-                >
-                  <Package className="w-3.5 h-3.5 text-neutral-500" />
-                  <span>Add Product</span>
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-
         {/* Notifications Popover */}
         <div className="relative" ref={notifRef}>
           <button
@@ -307,29 +214,15 @@ export const Navbar = () => {
           )}
         </div>
 
-        {/* User Role Switcher Dropdown & Logout */}
-        <div className="flex items-center gap-2 pl-2 border-l border-neutral-200">
-          <div className="hidden lg:flex flex-col items-end">
+        {/* User Info & Logout */}
+        <div className="flex items-center gap-2.5 pl-2 border-l border-neutral-200">
+          <div className="flex flex-col items-end">
             <span className="text-xs font-bold text-neutral-900 leading-tight">
               {currentUser?.name || (userRole === 'Accountant' ? 'Priya Sharma' : userRole === 'Contact User' ? 'Nimesh Pathak' : 'Aarav Mehta')}
             </span>
             <span className="text-[10px] text-neutral-500 font-mono">
               {currentUser?.title || userRole}
             </span>
-          </div>
-
-          <div className="flex items-center gap-1.5 bg-neutral-100 hover:bg-neutral-200/70 border border-neutral-200 px-2 py-1 rounded-lg text-xs transition-colors">
-            <Shield className="w-3.5 h-3.5 text-neutral-600 shrink-0" />
-            <select
-              value={userRole}
-              onChange={(e) => setUserRole(e.target.value)}
-              className="bg-transparent font-bold text-neutral-900 focus:outline-none cursor-pointer text-xs"
-              title="Switch Active Persona"
-            >
-              <option value="Admin">Admin (Aarav Mehta)</option>
-              <option value="Accountant">Accountant (Priya Sharma)</option>
-              <option value="Contact User">Client User (Nimesh Pathak)</option>
-            </select>
           </div>
 
           <button

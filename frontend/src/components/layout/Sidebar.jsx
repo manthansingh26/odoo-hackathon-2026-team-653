@@ -14,7 +14,6 @@ import {
   User,
   ChevronDown,
   ChevronRight,
-  Shield,
   RotateCcw,
   Sparkles,
   FileText,
@@ -30,7 +29,7 @@ import { Badge } from '../ui/Badge';
 export const Sidebar = ({ onCloseMobile }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { userRole, setUserRole, currentUser, logout, resetAllData } = useAppContext();
+  const { userRole, currentUser, logout, resetAllData } = useAppContext();
 
   // Collapsible groups in sidebar
   const [openGroups, setOpenGroups] = useState({
@@ -69,21 +68,6 @@ export const Sidebar = ({ onCloseMobile }) => {
             </span>
           </div>
           <span className="h-2 w-2 rounded-full bg-emerald-500 ring-4 ring-emerald-100" title="System Online" />
-        </div>
-        <div className="mt-3 flex items-center justify-between text-[11px] text-neutral-500 bg-neutral-50 border border-neutral-200 px-2.5 py-1 rounded-md">
-          <span className="flex items-center gap-1.5">
-            <Shield className="w-3 h-3 text-neutral-700" />
-            Role:
-          </span>
-          <select
-            value={userRole}
-            onChange={(e) => setUserRole(e.target.value)}
-            className="bg-transparent font-semibold text-neutral-900 focus:outline-none cursor-pointer"
-          >
-            <option value="Admin">Admin (Aarav Mehta)</option>
-            <option value="Accountant">Accountant (Priya Sharma)</option>
-            <option value="Contact User">Client User (Nimesh Pathak)</option>
-          </select>
         </div>
       </div>
 

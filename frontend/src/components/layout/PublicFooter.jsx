@@ -54,7 +54,6 @@ export const PublicFooter = ({ onOpenAuth, onOpenDoubleEntry }) => {
         <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs font-medium">
           <a href="/#features" className="hover:text-neutral-950 transition-colors">Features</a>
           <a href="/#metrics" className="hover:text-neutral-950 transition-colors">Metrics</a>
-          <a href="/#roles" className="hover:text-neutral-950 transition-colors">Roles</a>
           <a
             href="/#accounting"
             onClick={handleDoubleEntry}
