@@ -7,11 +7,15 @@ import { Badge } from '../components/ui/Badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
 import { Modal } from '../components/ui/Modal';
 
+import { validateInvoiceOrBillForm } from '../utils/validation';
+
 export const SalesOrders = () => {
-  const { data, addRecord, formatINR } = useAppContext();
+  const { data, addRecord, addToast, formatINR } = useAppContext();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [viewingOrder, setViewingOrder] = useState(null);
+  const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [customerContactId, setCustomerContactId] = useState(data.contacts[0]?.id || '');
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
@@ -72,19 +76,41 @@ export const SalesOrders = () => {
 
   const handleCreateOrder = (e) => {
     e.preventDefault();
+
+    const valResult = validateInvoiceOrBillForm({
+      contactId: customerContactId,
+      date,
+      dueDate: expectedDelivery,
+      items,
+      discount,
+      grandTotal,
+      isBill: false
+    });
+
+    if (!valResult.isValid) {
+      setErrors(valResult.errors);
+      addToast?.({
+        title: "Validation Error",
+        message: Object.values(valResult.errors)[0] || "Please correct the highlighted errors.",
+        type: "error"
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
     const contact = data.contacts.find(c => c.id === customerContactId);
     const orderId = `SO-2026-${Math.floor(100 + Math.random() * 900)}`;
 
     const formattedItems = items.map(it => {
       const p = data.products.find(prod => prod.id === it.productId);
-      const lineSub = it.quantity * it.unitPrice;
-      const lineTax = lineSub * (it.taxRate / 100);
+      const lineSub = (Number(it.quantity) || 0) * (Number(it.unitPrice) || 0);
+      const lineTax = lineSub * ((Number(it.taxRate) || 0) / 100);
       return {
         productId: it.productId,
         productName: p?.name || 'Item',
-        quantity: it.quantity,
-        unitPrice: it.unitPrice,
-        taxRate: it.taxRate,
+        quantity: Number(it.quantity),
+        unitPrice: Number(it.unitPrice),
+        taxRate: Number(it.taxRate),
         total: Math.round(lineSub + lineTax)
       };
     });
@@ -98,12 +124,13 @@ export const SalesOrders = () => {
       items: formattedItems,
       subtotal: Math.round(subtotal),
       tax: Math.round(tax),
-      discount: Number(discount),
+      discount: Number(discount) || 0,
       grandTotal: Math.round(grandTotal),
       status: 'Confirmed'
     });
 
     setIsModalOpen(false);
+    setIsSubmitting(false);
   };
 
   const convertToInvoice = (so) => {
@@ -237,7 +264,15 @@ export const SalesOrders = () => {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="text-xs font-semibold text-neutral-700 block mb-1">Customer *</label>
-              <Select value={customerContactId} onChange={(e) => setCustomerContactId(e.target.value)}>
+              <Select
+                value={customerContactId}
+                onChange={(e) => {
+                  setCustomerContactId(e.target.value);
+                  if (errors.contactId) setErrors(prev => ({ ...prev, contactId: null }));
+                }}
+                error={errors.contactId}
+              >
+                <option value="">-- Select Customer --</option>
                 {data.contacts.map(c => (
                   <option key={c.id} value={c.id}>{c.name} ({c.type})</option>
                 ))}
@@ -245,21 +280,42 @@ export const SalesOrders = () => {
             </div>
             <div>
               <label className="text-xs font-semibold text-neutral-700 block mb-1">Order Date *</label>
-              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+              <Input
+                type="date"
+                value={date}
+                onChange={(e) => {
+                  setDate(e.target.value);
+                  if (errors.date) setErrors(prev => ({ ...prev, date: null }));
+                }}
+                error={errors.date}
+                required
+              />
             </div>
             <div>
               <label className="text-xs font-semibold text-neutral-700 block mb-1">Expected Delivery *</label>
-              <Input type="date" value={expectedDelivery} onChange={(e) => setExpectedDelivery(e.target.value)} required />
+              <Input
+                type="date"
+                value={expectedDelivery}
+                onChange={(e) => {
+                  setExpectedDelivery(e.target.value);
+                  if (errors.dueDate) setErrors(prev => ({ ...prev, dueDate: null }));
+                }}
+                error={errors.dueDate}
+                required
+              />
             </div>
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-neutral-700">Order Lines</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-neutral-700">Order Lines *</span>
               <Button type="button" size="xs" variant="outline" onClick={addItemRow}>
                 <Plus className="w-3.5 h-3.5 mr-1" /> Add Product
               </Button>
             </div>
+            {errors.items && (
+              <p className="text-xs text-red-600 mb-2 font-medium">{errors.items}</p>
+            )}
 
             <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
               {items.map((it, idx) => (
@@ -268,8 +324,10 @@ export const SalesOrders = () => {
                     <Select
                       value={it.productId}
                       onChange={(e) => handleProductChange(idx, e.target.value)}
+                      error={errors[`item_${idx}_product`]}
                       className="text-xs py-1"
                     >
+                      <option value="">-- Select Product --</option>
                       {data.products.map(p => (
                         <option key={p.id} value={p.id}>{p.name} (₹{p.salesPrice})</option>
                       ))}
@@ -282,6 +340,7 @@ export const SalesOrders = () => {
                       placeholder="Qty"
                       value={it.quantity}
                       onChange={(e) => handleItemChange(idx, 'quantity', e.target.value)}
+                      error={errors[`item_${idx}_quantity`]}
                       className="text-xs py-1 font-mono"
                     />
                   </div>
@@ -292,6 +351,7 @@ export const SalesOrders = () => {
                       placeholder="Price"
                       value={it.unitPrice}
                       onChange={(e) => handleItemChange(idx, 'unitPrice', e.target.value)}
+                      error={errors[`item_${idx}_price`]}
                       className="text-xs py-1 font-mono"
                     />
                   </div>
@@ -310,7 +370,7 @@ export const SalesOrders = () => {
                     type="button"
                     onClick={() => removeItemRow(idx)}
                     disabled={items.length <= 1}
-                    className="p-1 text-neutral-400 hover:text-red-600 disabled:opacity-30"
+                    className="p-1 text-neutral-400 hover:text-red-600 disabled:opacity-30 cursor-pointer"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -326,7 +386,11 @@ export const SalesOrders = () => {
                 type="number"
                 min="0"
                 value={discount}
-                onChange={(e) => setDiscount(e.target.value)}
+                onChange={(e) => {
+                  setDiscount(e.target.value);
+                  if (errors.discount) setErrors(prev => ({ ...prev, discount: null }));
+                }}
+                error={errors.discount}
                 className="text-xs h-8"
               />
             </div>
@@ -336,12 +400,17 @@ export const SalesOrders = () => {
               <div className="text-base font-bold font-mono text-neutral-950">
                 Grand Total: {formatINR(grandTotal)}
               </div>
+              {errors.grandTotal && (
+                <p className="text-xs text-red-600 font-semibold">{errors.grandTotal}</p>
+              )}
             </div>
           </div>
 
           <div className="flex justify-end gap-2 pt-2 border-t border-neutral-100">
-            <Button variant="outline" size="sm" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-            <Button type="submit" variant="primary" size="sm">Save Sales Order</Button>
+            <Button variant="outline" size="sm" onClick={() => setIsModalOpen(false)} disabled={isSubmitting}>Cancel</Button>
+            <Button type="submit" variant="primary" size="sm" disabled={isSubmitting}>
+              {isSubmitting ? 'Saving...' : 'Save Sales Order'}
+            </Button>
           </div>
         </form>
       </Modal>

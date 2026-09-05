@@ -40,7 +40,16 @@ import { ProfilePage } from './pages/portal/ProfilePage';
 import { LandingPage } from './pages/public/LandingPage';
 
 function App() {
-  const { isAuthenticated, userRole } = useAppContext();
+  const { isAuthenticated, userRole, authInitialized } = useAppContext();
+
+  // Guard against unhydrated state flash
+  if (!authInitialized) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-neutral-900 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   // Role verification helper
   const isContact = userRole === 'Contact User';

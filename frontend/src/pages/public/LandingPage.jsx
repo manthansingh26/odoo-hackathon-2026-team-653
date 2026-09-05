@@ -61,7 +61,6 @@ export const LandingPage = () => {
     <div className="min-h-screen bg-white text-neutral-900 selection:bg-neutral-900 selection:text-white font-sans antialiased overflow-x-hidden">
       {/* Top Reusable Public Navbar */}
       <PublicNavbar
-        onOpenAuth={(tab) => openAuth(tab, 'Admin')}
         onOpenDoubleEntry={() => setIsDoubleEntryOpen(true)}
       />
 
@@ -142,19 +141,27 @@ export const LandingPage = () => {
 
             {/* Dashboard Mock Content */}
             <div className="p-4 sm:p-6 space-y-6 bg-white">
-              {/* Header Preview (Good morning, Admin) - Responsive */}
+              {/* Header Preview - Clean Professional Context */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-neutral-100">
                 <div>
-                  <h3 className="text-base sm:text-lg font-bold text-neutral-950">Good morning, Admin</h3>
-                  <p className="text-xs text-neutral-500 mt-0.5">Here's what's happening with Urban Furniture today.</p>
+                  <h3 className="text-base sm:text-lg font-bold text-neutral-950">
+                    Urban Furniture Enterprise Overview
+                  </h3>
+                  <p className="text-xs text-neutral-500 mt-0.5">Real-time ledger entries, double-entry vouchers, and audit balance sheets.</p>
                 </div>
                 <div className="w-full sm:w-auto">
                   <button
                     type="button"
-                    onClick={() => openAuth('login', 'Admin')}
+                    onClick={() => {
+                      if (isAuthenticated) {
+                        navigate('/dashboard');
+                      } else {
+                        navigate('/login');
+                      }
+                    }}
                     className="w-full sm:w-auto px-4 py-2 sm:py-1.5 bg-neutral-950 text-white text-xs font-semibold rounded-md shadow-xs hover:bg-neutral-800 transition-colors cursor-pointer text-center"
                   >
-                    Open Full ERP
+                    {isAuthenticated ? 'Open ERP Dashboard' : 'Sign In to Access ERP'}
                   </button>
                 </div>
               </div>
@@ -270,22 +277,14 @@ export const LandingPage = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Feature 1 (Interactive Double-Entry Sandbox Trigger) */}
-            <div
-              onClick={() => setIsDoubleEntryOpen(true)}
-              className="p-6 bg-white rounded-xl border border-neutral-200 shadow-xs space-y-3 hover:border-neutral-900 transition-all cursor-pointer group"
-            >
-              <div className="flex items-center justify-between">
-                <div className="p-2.5 bg-neutral-100 group-hover:bg-neutral-950 group-hover:text-white transition-colors text-neutral-900 rounded-lg w-fit">
-                  <Scale className="w-5 h-5" />
-                </div>
-                <span className="text-[11px] font-bold text-neutral-500 group-hover:text-neutral-950 transition-colors flex items-center gap-1">
-                  Open Demo <ArrowRight className="w-3 h-3" />
-                </span>
+            {/* Feature 1 */}
+            <div className="p-6 bg-white rounded-xl border border-neutral-200 shadow-xs space-y-3">
+              <div className="p-2.5 bg-neutral-100 text-neutral-900 rounded-lg w-fit">
+                <Scale className="w-5 h-5" />
               </div>
-              <h3 className="text-base font-bold text-neutral-950 group-hover:text-neutral-900">Double-Entry Journal Balancing</h3>
+              <h3 className="text-base font-bold text-neutral-950">Double-Entry Journal Balancing</h3>
               <p className="text-xs text-neutral-500 leading-relaxed">
-                Debit and Credit balancing validator ensures that every journal entry balances to ₹0 difference before posting to the general ledger. Click to try live simulator.
+                Debit and Credit balancing validator ensures that every journal entry balances to ₹0 difference before posting to the general ledger.
               </p>
             </div>
 

@@ -5,6 +5,7 @@ import { useAppContext } from '../../context/AppContext';
 import { Button } from '../ui/Button';
 import { Input, Select } from '../ui/Input';
 import { Badge } from '../ui/Badge';
+import { validateSignupForm, validateEmail } from '../../utils/validation';
 
 export const AuthModal = ({
   isOpen,
@@ -12,13 +13,14 @@ export const AuthModal = ({
   initialTab = 'login',
   initialRole = 'Admin'
 }) => {
-  const { login, signup, demoUsers } = useAppContext();
+  const { login, signup, demoUsers, addToast } = useAppContext();
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState(initialTab); // 'login' | 'signup'
   const [selectedRole, setSelectedRole] = useState(initialRole);
   const [loginEmail, setLoginEmail] = useState(demoUsers[initialRole]?.email || 'admin@urbanfurniture.in');
   const [loginPassword, setLoginPassword] = useState('password123');
+  const [errors, setErrors] = useState({});
 
   const [signupData, setSignupData] = useState({
     name: '',
@@ -32,6 +34,7 @@ export const AuthModal = ({
   useEffect(() => {
     if (isOpen) {
       setActiveTab(initialTab);
+      setErrors({});
       const role = initialRole && demoUsers[initialRole] ? initialRole : 'Admin';
       setSelectedRole(role);
       setLoginEmail(demoUsers[role]?.email || 'admin@urbanfurniture.in');
@@ -71,6 +74,13 @@ export const AuthModal = ({
 
   const handleLoginSubmit = (e) => {
     e.preventDefault();
+    const emailErr = validateEmail(loginEmail, true);
+    if (emailErr) {
+      setErrors({ loginEmail: emailErr });
+      addToast({ type: 'error', message: emailErr });
+      return;
+    }
+    setErrors({});
     login(loginEmail, loginPassword, selectedRole);
     onClose();
     navigate('/dashboard');
@@ -78,6 +88,16 @@ export const AuthModal = ({
 
   const handleSignupSubmit = (e) => {
     e.preventDefault();
+    const validation = validateSignupForm(signupData);
+    if (!validation.isValid) {
+      setErrors(validation.errors);
+      addToast({
+        type: 'error',
+        message: 'Please resolve the highlighted validation errors before proceeding.'
+      });
+      return;
+    }
+    setErrors({});
     signup(signupData);
     onClose();
     navigate('/dashboard');
@@ -234,7 +254,11 @@ export const AuthModal = ({
                       type="email"
                       required
                       value={loginEmail}
-                      onChange={(e) => setLoginEmail(e.target.value)}
+                      onChange={(e) => {
+                        setLoginEmail(e.target.value);
+                        if (errors.loginEmail) setErrors(prev => ({ ...prev, loginEmail: null }));
+                      }}
+                      error={errors.loginEmail}
                       className="pl-9"
                       placeholder="name@company.com"
                     />
@@ -268,7 +292,10 @@ export const AuthModal = ({
                 Don't have an account?{' '}
                 <button
                   type="button"
-                  onClick={() => setActiveTab('signup')}
+                  onClick={() => {
+                    setActiveTab('signup');
+                    setErrors({});
+                  }}
                   className="font-bold text-neutral-950 hover:underline cursor-pointer"
                 >
                   Create New Account
@@ -285,7 +312,11 @@ export const AuthModal = ({
                     <Input
                       required
                       value={signupData.name}
-                      onChange={(e) => setSignupData({ ...signupData, name: e.target.value })}
+                      onChange={(e) => {
+                        setSignupData({ ...signupData, name: e.target.value });
+                        if (errors.name) setErrors(prev => ({ ...prev, name: null }));
+                      }}
+                      error={errors.name}
                       className="pl-9"
                       placeholder="e.g. Vikram Singhania"
                     />
@@ -300,7 +331,11 @@ export const AuthModal = ({
                       type="email"
                       required
                       value={signupData.email}
-                      onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
+                      onChange={(e) => {
+                        setSignupData({ ...signupData, email: e.target.value });
+                        if (errors.email) setErrors(prev => ({ ...prev, email: null }));
+                      }}
+                      error={errors.email}
                       className="pl-9"
                       placeholder="vikram@domain.com"
                     />
@@ -340,7 +375,11 @@ export const AuthModal = ({
                       type="password"
                       required
                       value={signupData.password}
-                      onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
+                      onChange={(e) => {
+                        setSignupData({ ...signupData, password: e.target.value });
+                        if (errors.password) setErrors(prev => ({ ...prev, password: null }));
+                      }}
+                      error={errors.password}
                       className="pl-9"
                       placeholder="Min 6 characters"
                     />
@@ -357,7 +396,10 @@ export const AuthModal = ({
                 Already have an account?{' '}
                 <button
                   type="button"
-                  onClick={() => setActiveTab('login')}
+                  onClick={() => {
+                    setActiveTab('login');
+                    setErrors({});
+                  }}
                   className="font-bold text-neutral-950 hover:underline cursor-pointer"
                 >
                   Sign In

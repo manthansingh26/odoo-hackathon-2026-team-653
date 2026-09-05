@@ -16,12 +16,14 @@ import { Badge } from '../components/ui/Badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
 import { Modal } from '../components/ui/Modal';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
+import { validateJournalEntryForm } from '../utils/validation';
 
 export const JournalEntries = () => {
-  const { data, addRecord, formatINR } = useAppContext();
+  const { data, addRecord, formatINR, addToast } = useAppContext();
 
   const [isCreatorOpen, setIsCreatorOpen] = useState(false);
   const [viewingEntry, setViewingEntry] = useState(null);
+  const [errors, setErrors] = useState({});
 
   // New Journal Entry state
   const [journal, setJournal] = useState('Sales Journal');
@@ -96,15 +98,31 @@ export const JournalEntries = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!isBalanced) {
-      alert("Validation Error: Total Debit must equal Total Credit before posting!");
+
+    const validation = validateJournalEntryForm({
+      date,
+      reference,
+      description,
+      lines
+    });
+
+    if (!validation.isValid) {
+      setErrors(validation.errors);
+      if (validation.errors.balance) {
+        addToast({
+          type: 'error',
+          message: validation.errors.balance
+        });
+      } else {
+        addToast({
+          type: 'error',
+          message: 'Please resolve the highlighted validation errors before posting.'
+        });
+      }
       return;
     }
 
-    if (!description.trim()) {
-      alert("Validation Error: Voucher Narration / Description is required!");
-      return;
-    }
+    setErrors({});
 
     const cleanLines = lines.map(l => {
       const acc = (data.accounts || []).find(a => a.id === l.accountId);
@@ -134,6 +152,11 @@ export const JournalEntries = () => {
       status: 'Posted'
     });
 
+    addToast({
+      type: 'success',
+      message: `Journal voucher ${entryRef} posted successfully.`
+    });
+
     setIsCreatorOpen(false);
     setReference(`JE-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`);
     setDescription('');
@@ -149,7 +172,7 @@ export const JournalEntries = () => {
             Double-entry posted transactions ensuring debits equal credits in general ledger.
           </p>
         </div>
-        <Button onClick={() => setIsCreatorOpen(true)} size="sm" variant="primary" className="shadow-xs">
+        <Button onClick={() => { setErrors({}); setIsCreatorOpen(true); }} size="sm" variant="primary" className="shadow-xs">
           <Plus className="w-4 h-4 mr-1.5" />
           New Journal Entry
         </Button>
@@ -233,7 +256,10 @@ export const JournalEntries = () => {
       {/* New Journal Entry Modal with Double Entry Table and Validation */}
       <Modal
         isOpen={isCreatorOpen}
-        onClose={() => setIsCreatorOpen(false)}
+        onClose={() => {
+          setIsCreatorOpen(false);
+          setErrors({});
+        }}
         title="Double-Entry Journal Voucher"
         subtitle="Debit and Credit totals must balance before posting"
         maxWidth="max-w-4xl"
@@ -250,11 +276,28 @@ export const JournalEntries = () => {
             </div>
             <div>
               <label className="text-xs font-semibold text-neutral-700 block mb-1">Posting Date *</label>
-              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+              <Input
+                type="date"
+                value={date}
+                onChange={(e) => {
+                  setDate(e.target.value);
+                  if (errors.date) setErrors(prev => ({ ...prev, date: null }));
+                }}
+                error={errors.date}
+                required
+              />
             </div>
             <div className="sm:col-span-2">
               <label className="text-xs font-semibold text-neutral-700 block mb-1">Reference / Doc No. *</label>
-              <Input value={reference} onChange={(e) => setReference(e.target.value)} required />
+              <Input
+                value={reference}
+                onChange={(e) => {
+                  setReference(e.target.value);
+                  if (errors.reference) setErrors(prev => ({ ...prev, reference: null }));
+                }}
+                error={errors.reference}
+                required
+              />
             </div>
           </div>
 
@@ -263,10 +306,20 @@ export const JournalEntries = () => {
             <Input
               required
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e) => {
+                setDescription(e.target.value);
+                if (errors.description) setErrors(prev => ({ ...prev, description: null }));
+              }}
+              error={errors.description}
               placeholder="e.g. Depreciation allocation for showroom assets"
             />
           </div>
+
+          {errors.lines && (
+            <div className="p-2.5 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700">
+              {errors.lines}
+            </div>
+          )}
 
           {/* Double-entry lines table */}
           <div>
@@ -371,16 +424,31 @@ export const JournalEntries = () => {
                   <AlertTriangle className="w-4 h-4 shrink-0" />
                   <div className="text-xs font-bold">
                     Not Balanced
-                    <span className="font-normal block text-[10px]">Diff: {formatINR(difference)}</span>
+                    <span className="font-normal block text-[10px]">Difference: {formatINR(difference)}</span>
                   </div>
                 </div>
               )}
             </div>
           </div>
 
+          {errors.balance && (
+            <div className="p-2.5 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 font-medium">
+              {errors.balance}
+            </div>
+          )}
+
           <div className="flex justify-end gap-2 pt-2 border-t border-neutral-100">
-            <Button variant="outline" size="sm" onClick={() => setIsCreatorOpen(false)}>Cancel</Button>
-            <Button type="submit" variant="primary" size="sm" disabled={!isBalanced}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setIsCreatorOpen(false);
+                setErrors({});
+              }}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" variant="primary" size="sm" disabled={!isBalanced || totalDebit === 0}>
               Post Journal Voucher
             </Button>
           </div>

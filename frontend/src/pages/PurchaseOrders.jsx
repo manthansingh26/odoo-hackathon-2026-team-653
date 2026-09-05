@@ -7,11 +7,15 @@ import { Badge } from '../components/ui/Badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
 import { Modal } from '../components/ui/Modal';
 
+import { validateInvoiceOrBillForm } from '../utils/validation';
+
 export const PurchaseOrders = () => {
-  const { data, addRecord, formatINR } = useAppContext();
+  const { data, addRecord, addToast, formatINR } = useAppContext();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [viewingPO, setViewingPO] = useState(null);
+  const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const vendors = data.contacts.filter(c => c.type === 'Vendor' || c.type === 'Both');
   const [vendorId, setVendorId] = useState(vendors[0]?.id || '');
@@ -67,6 +71,28 @@ export const PurchaseOrders = () => {
 
   const handleCreatePO = (e) => {
     e.preventDefault();
+
+    const valResult = validateInvoiceOrBillForm({
+      contactId: vendorId,
+      date: new Date().toISOString().slice(0, 10),
+      dueDate: expectedDate,
+      items,
+      discount: 0,
+      grandTotal: totalAmount,
+      isBill: true
+    });
+
+    if (!valResult.isValid) {
+      setErrors(valResult.errors);
+      addToast?.({
+        title: "Validation Error",
+        message: Object.values(valResult.errors)[0] || "Please correct the highlighted errors.",
+        type: "error"
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
     const v = data.contacts.find(c => c.id === vendorId);
     const poId = `PO-2026-${Math.floor(100 + Math.random() * 900)}`;
 
@@ -75,9 +101,9 @@ export const PurchaseOrders = () => {
       return {
         productId: it.productId,
         productName: p?.name || 'Raw Component',
-        quantity: it.quantity,
-        unitPrice: it.unitPrice,
-        total: it.quantity * it.unitPrice
+        quantity: Number(it.quantity),
+        unitPrice: Number(it.unitPrice),
+        total: (Number(it.quantity) || 0) * (Number(it.unitPrice) || 0)
       };
     });
 
@@ -93,6 +119,7 @@ export const PurchaseOrders = () => {
     });
 
     setIsModalOpen(false);
+    setIsSubmitting(false);
   };
 
   const convertPOToBill = (po) => {
@@ -222,7 +249,15 @@ export const PurchaseOrders = () => {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs font-semibold text-neutral-700 block mb-1">Vendor Supplier *</label>
-              <Select value={vendorId} onChange={(e) => setVendorId(e.target.value)}>
+              <Select
+                value={vendorId}
+                onChange={(e) => {
+                  setVendorId(e.target.value);
+                  if (errors.contactId) setErrors(prev => ({ ...prev, contactId: null }));
+                }}
+                error={errors.contactId}
+              >
+                <option value="">-- Select Vendor --</option>
                 {vendors.map(v => (
                   <option key={v.id} value={v.id}>{v.name} ({v.city})</option>
                 ))}
@@ -230,17 +265,29 @@ export const PurchaseOrders = () => {
             </div>
             <div>
               <label className="text-xs font-semibold text-neutral-700 block mb-1">Expected Delivery *</label>
-              <Input type="date" value={expectedDate} onChange={(e) => setExpectedDate(e.target.value)} required />
+              <Input
+                type="date"
+                value={expectedDate}
+                onChange={(e) => {
+                  setExpectedDate(e.target.value);
+                  if (errors.dueDate) setErrors(prev => ({ ...prev, dueDate: null }));
+                }}
+                error={errors.dueDate}
+                required
+              />
             </div>
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-neutral-700">Procurement Items</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-neutral-700">Procurement Items *</span>
               <Button type="button" size="xs" variant="outline" onClick={addItemRow}>
                 <Plus className="w-3.5 h-3.5 mr-1" /> Add Row
               </Button>
             </div>
+            {errors.items && (
+              <p className="text-xs text-red-600 mb-2 font-medium">{errors.items}</p>
+            )}
 
             <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
               {items.map((it, idx) => (
@@ -249,8 +296,10 @@ export const PurchaseOrders = () => {
                     <Select
                       value={it.productId}
                       onChange={(e) => handleProductChange(idx, e.target.value)}
+                      error={errors[`item_${idx}_product`]}
                       className="text-xs py-1"
                     >
+                      <option value="">-- Select Product --</option>
                       {data.products.map(p => (
                         <option key={p.id} value={p.id}>{p.name} (Cost: ₹{p.purchasePrice})</option>
                       ))}
@@ -263,6 +312,7 @@ export const PurchaseOrders = () => {
                       placeholder="Qty"
                       value={it.quantity}
                       onChange={(e) => handleItemChange(idx, 'quantity', e.target.value)}
+                      error={errors[`item_${idx}_quantity`]}
                       className="text-xs py-1 font-mono"
                     />
                   </div>
@@ -273,6 +323,7 @@ export const PurchaseOrders = () => {
                       placeholder="Cost (₹)"
                       value={it.unitPrice}
                       onChange={(e) => handleItemChange(idx, 'unitPrice', e.target.value)}
+                      error={errors[`item_${idx}_price`]}
                       className="text-xs py-1 font-mono"
                     />
                   </div>
@@ -280,7 +331,7 @@ export const PurchaseOrders = () => {
                     type="button"
                     onClick={() => removeItemRow(idx)}
                     disabled={items.length <= 1}
-                    className="p-1 text-neutral-400 hover:text-red-600 disabled:opacity-30"
+                    className="p-1 text-neutral-400 hover:text-red-600 disabled:opacity-30 cursor-pointer"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -289,14 +340,21 @@ export const PurchaseOrders = () => {
             </div>
           </div>
 
-          <div className="p-3 bg-neutral-50 rounded-lg border border-neutral-200 flex justify-between items-center text-sm font-bold">
-            <span>Total Requisition:</span>
-            <span className="font-mono text-base">{formatINR(totalAmount)}</span>
+          <div className="p-3 bg-neutral-50 rounded-lg border border-neutral-200 flex flex-col justify-between text-sm font-bold gap-1">
+            <div className="flex justify-between items-center">
+              <span>Total Requisition:</span>
+              <span className="font-mono text-base">{formatINR(totalAmount)}</span>
+            </div>
+            {errors.grandTotal && (
+              <p className="text-xs text-red-600 font-semibold">{errors.grandTotal}</p>
+            )}
           </div>
 
           <div className="flex justify-end gap-2 pt-2 border-t border-neutral-100">
-            <Button variant="outline" size="sm" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-            <Button type="submit" variant="primary" size="sm">Issue Purchase Order</Button>
+            <Button variant="outline" size="sm" onClick={() => setIsModalOpen(false)} disabled={isSubmitting}>Cancel</Button>
+            <Button type="submit" variant="primary" size="sm" disabled={isSubmitting}>
+              {isSubmitting ? 'Issuing...' : 'Issue Purchase Order'}
+            </Button>
           </div>
         </form>
       </Modal>

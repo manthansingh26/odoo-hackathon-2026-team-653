@@ -148,14 +148,6 @@ export const Dashboard = () => {
                 size="sm"
                 variant="outline"
                 className="bg-white/10 hover:bg-white/20 text-white border-white/20 text-xs"
-                onClick={() => setActiveModal({ type: 'NEW_INVOICE' })}
-              >
-                + New Invoice
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="bg-white/10 hover:bg-white/20 text-white border-white/20 text-xs"
                 onClick={() => setActiveModal({ type: 'NEW_BILL' })}
               >
                 + New Bill

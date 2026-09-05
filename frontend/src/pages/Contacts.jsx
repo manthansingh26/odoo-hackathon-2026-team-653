@@ -23,6 +23,8 @@ import { Modal } from '../components/ui/Modal';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { FavoriteButton } from '../components/ui/FavoriteButton';
 
+import { validateContactForm, normalizePhone } from '../utils/validation';
+
 export const Contacts = () => {
   const {
     data,
@@ -30,6 +32,7 @@ export const Contacts = () => {
     updateRecord,
     deleteRecord,
     toggleFavorite,
+    addToast,
     formatINR
   } = useAppContext();
 
@@ -41,6 +44,8 @@ export const Contacts = () => {
   const [editingContact, setEditingContact] = useState(null);
   const [viewingContact, setViewingContact] = useState(null);
   const [deletingContactId, setDeletingContactId] = useState(null);
+  const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form input state
   const [formData, setFormData] = useState({
@@ -58,6 +63,8 @@ export const Contacts = () => {
 
   const openAddModal = () => {
     setEditingContact(null);
+    setErrors({});
+    setIsSubmitting(false);
     setFormData({
       name: '',
       type: 'Customer',
@@ -75,11 +82,13 @@ export const Contacts = () => {
 
   const openEditModal = (contact) => {
     setEditingContact(contact);
+    setErrors({});
+    setIsSubmitting(false);
     setFormData({
       name: contact.name,
       type: contact.type,
       email: contact.email,
-      mobile: contact.mobile,
+      mobile: contact.mobile || contact.phone || '',
       address: contact.address || '',
       city: contact.city || '',
       state: contact.state || '',
@@ -92,20 +101,42 @@ export const Contacts = () => {
 
   const handleSaveContact = (e) => {
     e.preventDefault();
-    if (editingContact) {
-      updateRecord('contacts', editingContact.id, {
-        ...formData,
-        outstanding: Number(formData.outstanding)
+
+    const valResult = validateContactForm(formData);
+    if (!valResult.isValid) {
+      setErrors(valResult.errors);
+      addToast?.({
+        title: "Validation Error",
+        message: Object.values(valResult.errors)[0] || "Please correct the highlighted errors.",
+        type: "error"
       });
+      return;
+    }
+
+    setIsSubmitting(true);
+    const cleanData = {
+      ...formData,
+      name: formData.name.trim(),
+      email: formData.email.trim().toLowerCase(),
+      mobile: normalizePhone(formData.mobile),
+      phone: normalizePhone(formData.mobile),
+      city: formData.city?.trim() || '',
+      state: formData.state?.trim() || '',
+      pincode: formData.pincode?.toString().trim() || '',
+      outstanding: Number(formData.outstanding) || 0
+    };
+
+    if (editingContact) {
+      updateRecord('contacts', editingContact.id, cleanData);
     } else {
       addRecord('contacts', {
-        ...formData,
-        outstanding: Number(formData.outstanding),
+        ...cleanData,
         favorite: false,
         createdAt: new Date().toISOString().slice(0, 10)
       });
     }
     setIsFormOpen(false);
+    setIsSubmitting(false);
   };
 
   const handleToggleArchive = (contact) => {
@@ -295,7 +326,11 @@ export const Contacts = () => {
               <Input
                 required
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, name: e.target.value });
+                  if (errors.name) setErrors(prev => ({ ...prev, name: null }));
+                }}
+                error={errors.name}
                 placeholder="e.g. Acme Furnishings"
               />
             </div>
@@ -319,7 +354,12 @@ export const Contacts = () => {
                 type="email"
                 required
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, email: e.target.value });
+                  if (errors.email) setErrors(prev => ({ ...prev, email: null }));
+                }}
+                error={errors.email}
+                placeholder="client@domain.com"
               />
             </div>
             <div>
@@ -327,7 +367,12 @@ export const Contacts = () => {
               <Input
                 required
                 value={formData.mobile}
-                onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, mobile: e.target.value });
+                  if (errors.mobile) setErrors(prev => ({ ...prev, mobile: null }));
+                }}
+                error={errors.mobile}
+                placeholder="9876543210"
               />
             </div>
           </div>
@@ -337,6 +382,7 @@ export const Contacts = () => {
             <Input
               value={formData.address}
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              placeholder="Plot / Street Name"
             />
           </div>
 
@@ -345,21 +391,33 @@ export const Contacts = () => {
               <label className="text-xs font-semibold text-neutral-700 block mb-1">City</label>
               <Input
                 value={formData.city}
-                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, city: e.target.value });
+                  if (errors.city) setErrors(prev => ({ ...prev, city: null }));
+                }}
+                error={errors.city}
               />
             </div>
             <div>
               <label className="text-xs font-semibold text-neutral-700 block mb-1">State</label>
               <Input
                 value={formData.state}
-                onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, state: e.target.value });
+                  if (errors.state) setErrors(prev => ({ ...prev, state: null }));
+                }}
+                error={errors.state}
               />
             </div>
             <div>
               <label className="text-xs font-semibold text-neutral-700 block mb-1">Pincode</label>
               <Input
                 value={formData.pincode}
-                onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, pincode: e.target.value });
+                  if (errors.pincode) setErrors(prev => ({ ...prev, pincode: null }));
+                }}
+                error={errors.pincode}
               />
             </div>
           </div>
@@ -370,7 +428,11 @@ export const Contacts = () => {
               <Input
                 type="number"
                 value={formData.outstanding}
-                onChange={(e) => setFormData({ ...formData, outstanding: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, outstanding: e.target.value });
+                  if (errors.outstanding) setErrors(prev => ({ ...prev, outstanding: null }));
+                }}
+                error={errors.outstanding}
               />
             </div>
             <div>
@@ -386,11 +448,11 @@ export const Contacts = () => {
           </div>
 
           <div className="flex justify-end gap-2 pt-3 border-t border-neutral-100">
-            <Button variant="outline" size="sm" onClick={() => setIsFormOpen(false)}>
+            <Button variant="outline" size="sm" onClick={() => setIsFormOpen(false)} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button type="submit" variant="primary" size="sm">
-              {editingContact ? 'Update Contact' : 'Create Contact'}
+            <Button type="submit" variant="primary" size="sm" disabled={isSubmitting}>
+              {isSubmitting ? 'Saving...' : (editingContact ? 'Update Contact' : 'Create Contact')}
             </Button>
           </div>
         </form>

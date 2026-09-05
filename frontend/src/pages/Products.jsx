@@ -20,6 +20,8 @@ import { Modal } from '../components/ui/Modal';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { FavoriteButton } from '../components/ui/FavoriteButton';
 
+import { validateProductForm } from '../utils/validation';
+
 export const Products = () => {
   const {
     data,
@@ -27,6 +29,7 @@ export const Products = () => {
     updateRecord,
     deleteRecord,
     toggleFavorite,
+    addToast,
     formatINR
   } = useAppContext();
 
@@ -52,8 +55,13 @@ export const Products = () => {
     description: ''
   });
 
+  const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const openAddModal = () => {
     setEditingProduct(null);
+    setErrors({});
+    setIsSubmitting(false);
     setFormData({
       name: '',
       code: `FURN-${Math.floor(100 + Math.random() * 900)}`,
@@ -71,6 +79,8 @@ export const Products = () => {
 
   const openEditModal = (p) => {
     setEditingProduct(p);
+    setErrors({});
+    setIsSubmitting(false);
     setFormData({
       name: p.name,
       code: p.code,
@@ -88,6 +98,19 @@ export const Products = () => {
 
   const handleSaveProduct = (e) => {
     e.preventDefault();
+
+    const valResult = validateProductForm(formData, data.products || [], editingProduct?.id);
+    if (!valResult.isValid) {
+      setErrors(valResult.errors);
+      addToast?.({
+        title: "Validation Error",
+        message: Object.values(valResult.errors)[0] || "Please correct the highlighted errors.",
+        type: "error"
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
     const stockVal = formData.type === 'Service' ? null : Number(formData.stock);
     let derivedStatus = formData.status;
     if (formData.type !== 'Service') {
@@ -96,25 +119,28 @@ export const Products = () => {
       else derivedStatus = 'Active';
     }
 
+    const cleanData = {
+      ...formData,
+      name: formData.name.trim(),
+      code: formData.code.trim().toUpperCase(),
+      sku: formData.code.trim().toUpperCase(),
+      salesPrice: Number(formData.salesPrice),
+      purchasePrice: Number(formData.purchasePrice) || 0,
+      stock: stockVal,
+      minStock: Number(formData.minStock) || 5,
+      status: derivedStatus
+    };
+
     if (editingProduct) {
-      updateRecord('products', editingProduct.id, {
-        ...formData,
-        salesPrice: Number(formData.salesPrice),
-        purchasePrice: Number(formData.purchasePrice),
-        stock: stockVal,
-        status: derivedStatus
-      });
+      updateRecord('products', editingProduct.id, cleanData);
     } else {
       addRecord('products', {
-        ...formData,
-        salesPrice: Number(formData.salesPrice),
-        purchasePrice: Number(formData.purchasePrice),
-        stock: stockVal,
-        status: derivedStatus,
+        ...cleanData,
         favorite: false
       });
     }
     setIsFormOpen(false);
+    setIsSubmitting(false);
   };
 
   const handleToggleArchive = (p) => {
@@ -308,12 +334,16 @@ export const Products = () => {
         <form onSubmit={handleSaveProduct} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-semibold text-neutral-700 block mb-1">Product Title *</label>
+              <label className="text-xs font-semibold text-neutral-700 block mb-1">Product Name *</label>
               <Input
                 required
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="e.g. Ergonomic Standing Desk"
+                onChange={(e) => {
+                  setFormData({ ...formData, name: e.target.value });
+                  if (errors.name) setErrors(prev => ({ ...prev, name: null }));
+                }}
+                error={errors.name}
+                placeholder="e.g. Ergonomic Office Chair"
               />
             </div>
             <div>
@@ -321,7 +351,11 @@ export const Products = () => {
               <Input
                 required
                 value={formData.code}
-                onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, code: e.target.value });
+                  if (errors.code) setErrors(prev => ({ ...prev, code: null }));
+                }}
+                error={errors.code}
               />
             </div>
           </div>
@@ -363,7 +397,11 @@ export const Products = () => {
                 min="0"
                 required
                 value={formData.salesPrice}
-                onChange={(e) => setFormData({ ...formData, salesPrice: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, salesPrice: e.target.value });
+                  if (errors.salesPrice) setErrors(prev => ({ ...prev, salesPrice: null }));
+                }}
+                error={errors.salesPrice}
               />
             </div>
             <div>
@@ -372,7 +410,11 @@ export const Products = () => {
                 type="number"
                 min="0"
                 value={formData.purchasePrice}
-                onChange={(e) => setFormData({ ...formData, purchasePrice: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, purchasePrice: e.target.value });
+                  if (errors.purchasePrice) setErrors(prev => ({ ...prev, purchasePrice: null }));
+                }}
+                error={errors.purchasePrice}
               />
             </div>
             <div>
@@ -382,7 +424,11 @@ export const Products = () => {
                 min="0"
                 disabled={formData.type === 'Service'}
                 value={formData.stock}
-                onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, stock: e.target.value });
+                  if (errors.stock) setErrors(prev => ({ ...prev, stock: null }));
+                }}
+                error={errors.stock}
               />
             </div>
           </div>
@@ -398,9 +444,9 @@ export const Products = () => {
           </div>
 
           <div className="flex justify-end gap-2 pt-3 border-t border-neutral-100">
-            <Button variant="outline" size="sm" onClick={() => setIsFormOpen(false)}>Cancel</Button>
-            <Button type="submit" variant="primary" size="sm">
-              {editingProduct ? 'Update Product' : 'Save Product'}
+            <Button variant="outline" size="sm" onClick={() => setIsFormOpen(false)} disabled={isSubmitting}>Cancel</Button>
+            <Button type="submit" variant="primary" size="sm" disabled={isSubmitting}>
+              {isSubmitting ? 'Saving...' : (editingProduct ? 'Update Product' : 'Save Product')}
             </Button>
           </div>
         </form>

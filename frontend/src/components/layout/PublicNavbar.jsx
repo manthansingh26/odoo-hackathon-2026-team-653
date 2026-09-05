@@ -10,21 +10,13 @@ export const PublicNavbar = ({ onOpenAuth, onOpenDoubleEntry }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleSignIn = (e) => {
-    if (onOpenAuth) {
-      e.preventDefault();
-      onOpenAuth('login');
-    } else {
-      navigate('/login');
-    }
+    e?.preventDefault();
+    navigate('/login');
   };
 
   const handleSignUp = (e) => {
-    if (onOpenAuth) {
-      e.preventDefault();
-      onOpenAuth('signup');
-    } else {
-      navigate('/signup');
-    }
+    e?.preventDefault();
+    navigate('/signup');
   };
 
   const handleDoubleEntry = (e) => {
@@ -78,36 +70,41 @@ export const PublicNavbar = ({ onOpenAuth, onOpenDoubleEntry }) => {
             </Link>
           ) : (
             <>
-              <button
-                type="button"
-                onClick={handleSignIn}
+              <Link
+                to="/login"
                 className="inline-flex items-center justify-center font-semibold rounded-md transition-colors text-xs text-neutral-700 hover:text-neutral-950 hover:bg-neutral-100 px-3 py-1.5 cursor-pointer"
               >
                 Sign In
-              </button>
-              <button
-                type="button"
-                onClick={handleSignUp}
+              </Link>
+              <Link
+                to="/signup"
                 className="inline-flex items-center justify-center font-semibold rounded-md transition-colors gap-1.5 text-xs shadow-xs bg-neutral-950 text-white hover:bg-neutral-800 px-3.5 py-1.5 cursor-pointer"
               >
                 <span>Get Started</span>
                 <ArrowRight className="w-3.5 h-3.5" />
-              </button>
+              </Link>
             </>
           )}
         </div>
 
-        {/* Mobile Right Controls: Get Started + Hamburger */}
-        <div className="flex md:hidden items-center gap-2">
+        {/* Mobile Right Controls: Sign In / Get Started / Dashboard + Hamburger */}
+        <div className="flex md:hidden items-center gap-1.5">
           {!isAuthenticated ? (
-            <button
-              type="button"
-              onClick={handleSignUp}
-              className="inline-flex items-center justify-center font-semibold rounded-md transition-colors text-[11px] px-2.5 py-1 gap-1 bg-neutral-950 text-white hover:bg-neutral-800 cursor-pointer"
-            >
-              <span>Get Started</span>
-              <ArrowRight className="w-3 h-3" />
-            </button>
+            <>
+              <Link
+                to="/login"
+                className="text-neutral-700 hover:text-neutral-950 font-semibold text-[11px] px-2 py-1"
+              >
+                Sign In
+              </Link>
+              <Link
+                to="/signup"
+                className="inline-flex items-center justify-center font-semibold rounded-md transition-colors text-[11px] px-2.5 py-1 gap-1 bg-neutral-950 text-white hover:bg-neutral-800 cursor-pointer"
+              >
+                <span>Get Started</span>
+                <ArrowRight className="w-3 h-3" />
+              </Link>
+            </>
           ) : (
             <Link to="/dashboard">
               <Button variant="primary" size="sm" className="text-[11px] px-2.5 py-1 font-semibold">
@@ -118,7 +115,7 @@ export const PublicNavbar = ({ onOpenAuth, onOpenDoubleEntry }) => {
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-1.5 text-neutral-700 hover:text-neutral-950 hover:bg-neutral-100 rounded-md transition-colors cursor-pointer"
+            className="p-1.5 text-neutral-700 hover:text-neutral-950 hover:bg-neutral-100 rounded-md transition-colors cursor-pointer ml-1"
             aria-label="Toggle navigation menu"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -158,27 +155,21 @@ export const PublicNavbar = ({ onOpenAuth, onOpenDoubleEntry }) => {
           <div className="pt-2 border-t border-neutral-100 flex flex-col gap-2">
             {!isAuthenticated ? (
               <>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    setMobileMenuOpen(false);
-                    handleSignIn(e);
-                  }}
+                <Link
+                  to="/login"
+                  onClick={() => setMobileMenuOpen(false)}
                   className="w-full inline-flex items-center justify-center font-semibold text-xs py-2 rounded-md border border-neutral-200 bg-white text-neutral-800 hover:bg-neutral-50 cursor-pointer"
                 >
                   Sign In
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    setMobileMenuOpen(false);
-                    handleSignUp(e);
-                  }}
+                </Link>
+                <Link
+                  to="/signup"
+                  onClick={() => setMobileMenuOpen(false)}
                   className="w-full inline-flex items-center justify-center font-semibold text-xs py-2 rounded-md bg-neutral-950 text-white hover:bg-neutral-800 gap-1.5 cursor-pointer shadow-xs"
                 >
                   <span>Get Started Free</span>
                   <ArrowRight className="w-3.5 h-3.5" />
-                </button>
+                </Link>
               </>
             ) : (
               <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>

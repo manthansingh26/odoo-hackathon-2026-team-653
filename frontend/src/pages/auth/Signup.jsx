@@ -6,9 +6,10 @@ import { Button } from '../../components/ui/Button';
 import { Input, Select } from '../../components/ui/Input';
 import { PublicNavbar } from '../../components/layout/PublicNavbar';
 import { PublicFooter } from '../../components/layout/PublicFooter';
+import { validateSignupForm } from '../../utils/validation';
 
 export const Signup = () => {
-  const { signup, isAuthenticated } = useAppContext();
+  const { signup, isAuthenticated, addToast } = useAppContext();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -24,9 +25,20 @@ export const Signup = () => {
     password: '',
     role: 'Admin'
   });
+  const [errors, setErrors] = useState({});
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const validation = validateSignupForm(formData);
+    if (!validation.isValid) {
+      setErrors(validation.errors);
+      addToast({
+        type: 'error',
+        message: 'Please resolve the highlighted validation errors before proceeding.'
+      });
+      return;
+    }
+    setErrors({});
     signup(formData);
     navigate('/dashboard');
   };
@@ -60,7 +72,11 @@ export const Signup = () => {
                 <Input
                   required
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, name: e.target.value });
+                    if (errors.name) setErrors(prev => ({ ...prev, name: null }));
+                  }}
+                  error={errors.name}
                   className="pl-9"
                   placeholder="e.g. Vikram Singhania"
                 />
@@ -75,7 +91,11 @@ export const Signup = () => {
                   type="email"
                   required
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, email: e.target.value });
+                    if (errors.email) setErrors(prev => ({ ...prev, email: null }));
+                  }}
+                  error={errors.email}
                   className="pl-9"
                   placeholder="vikram@domain.com"
                 />
@@ -115,7 +135,11 @@ export const Signup = () => {
                   type="password"
                   required
                   value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, password: e.target.value });
+                    if (errors.password) setErrors(prev => ({ ...prev, password: null }));
+                  }}
+                  error={errors.password}
                   className="pl-9"
                   placeholder="Min 6 characters"
                 />

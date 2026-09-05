@@ -59,33 +59,45 @@ export const AppProvider = ({ children }) => {
       localStorage.removeItem('urban_furniture_auth_v1');
       localStorage.removeItem('urban_furniture_user_v1');
     }
-  } catch (e) {
+  } catch (_e) {
     // ignore
   }
 
-  // Auth state persisted in localStorage (defaults to logged out)
-  const [currentUser, setCurrentUser] = useState(() => {
-    const savedUser = localStorage.getItem('urban_furniture_user_v2');
-    const isAuth = localStorage.getItem('urban_furniture_auth_v2') === 'true';
-    if (savedUser && isAuth) {
-      try {
-        return JSON.parse(savedUser);
-      } catch (e) {
-        console.error("Could not parse saved user", e);
+  // Deterministic synchronous auth hydration from localStorage
+  const getInitialAuth = () => {
+    try {
+      const isAuth = localStorage.getItem('urban_furniture_auth_v2') === 'true';
+      const savedUser = localStorage.getItem('urban_furniture_user_v2');
+      if (isAuth && savedUser) {
+        const parsed = JSON.parse(savedUser);
+        if (parsed && (parsed.id || parsed.email)) {
+          return {
+            currentUser: parsed,
+            isAuthenticated: true,
+            userRole: parsed.role || 'Admin',
+            activeContactId: parsed.contactId || 'C-101',
+            authInitialized: true
+          };
+        }
       }
+    } catch (e) {
+      console.error("Could not parse saved auth state", e);
     }
-    return null;
-  });
+    return {
+      currentUser: null,
+      isAuthenticated: false,
+      userRole: 'Admin',
+      activeContactId: 'C-101',
+      authInitialized: true
+    };
+  };
 
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return localStorage.getItem('urban_furniture_auth_v2') === 'true' && Boolean(localStorage.getItem('urban_furniture_user_v2'));
-  });
-
-  // User role: 'Admin' | 'Accountant' | 'Contact User'
-  const [userRole, setUserRoleState] = useState(currentUser?.role || 'Admin');
-  
-  // For Contact User view, active contact ID (defaults to Nimesh Pathak C-101)
-  const [activeContactId, setActiveContactId] = useState(currentUser?.contactId || 'C-101');
+  const initialAuth = getInitialAuth();
+  const [currentUser, setCurrentUser] = useState(initialAuth.currentUser);
+  const [isAuthenticated, setIsAuthenticated] = useState(initialAuth.isAuthenticated);
+  const [userRole, setUserRoleState] = useState(initialAuth.userRole);
+  const [activeContactId, setActiveContactId] = useState(initialAuth.activeContactId);
+  const [authInitialized] = useState(initialAuth.authInitialized);
 
   // Command palette & notification popover states
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -156,19 +168,24 @@ export const AppProvider = ({ children }) => {
             email: c.email || '',
             mobile: c.phone || '',
             phone: c.phone || '',
-            address: c.address || 'Commercial Hub',
-            city: c.city || 'Mumbai',
-            state: c.state || 'Maharashtra',
-            pincode: c.pincode || '400001',
-            outstanding: c.outstanding !== undefined ? Number(c.outstanding) : 0,
-            status: c.status || 'Active',
-            favorite: Boolean(c.favorite),
+            address: 'Commercial Hub',
+            city: 'Mumbai',
+            state: 'Maharashtra',
+            pincode: '400001',
+            outstanding: 0,
+            status: 'Active',
+            favorite: false,
             createdAt: c.createdAt ? c.createdAt.slice(0, 10) : new Date().toISOString().slice(0, 10)
           }));
           setData(prev => ({
             ...prev,
             contacts: mappedContacts
           }));
+
+          const nimesh = contacts.find(c => c.email === 'nimesh.pathak@techcraft.io');
+          if (nimesh) {
+            setActiveContactId(nimesh.id);
+          }
         }
       } catch (err) {
         console.warn('[API] Contacts fetch warning:', err.message);
@@ -180,17 +197,17 @@ export const AppProvider = ({ children }) => {
           const mappedProducts = products.map(p => ({
             id: p.id,
             name: p.name,
-            code: p.sku || p.code || 'FUR-001',
-            sku: p.sku || p.code || 'FUR-001',
+            code: p.sku || 'FUR-001',
+            sku: p.sku || 'FUR-001',
             type: 'Goods',
-            category: p.category || 'Furniture',
+            category: p.sku?.includes('CHR') ? 'Seating' : p.sku?.includes('DSK') ? 'Desks' : p.sku?.includes('TBL') ? 'Tables' : p.sku?.includes('SOF') ? 'Lounge' : p.sku?.includes('BED') ? 'Beds' : p.sku?.includes('WRD') ? 'Wardrobes' : 'Storage',
             salesPrice: Number(p.price || 0),
-            purchasePrice: p.purchasePrice !== undefined ? Number(p.purchasePrice) : Math.round(Number(p.price || 0) * 0.7),
+            purchasePrice: Math.round(Number(p.price || 0) * 0.65),
             stock: Number(p.stock || 0),
             minStock: 10,
-            status: 'Active',
+            status: Number(p.stock || 0) <= 5 ? 'Low Stock' : 'Active',
             favorite: false,
-            description: p.description || p.name
+            description: p.name
           }));
           setData(prev => ({
             ...prev,
@@ -209,15 +226,170 @@ export const AppProvider = ({ children }) => {
             date: tx.transactionDate ? tx.transactionDate.slice(0, 10) : new Date().toISOString().slice(0, 10),
             reference: tx.reference,
             contact: tx.contact?.name || 'Contact',
+            contactId: tx.contactId,
             type: tx.type === 'SALE' ? 'Sales' : tx.type === 'PURCHASE' ? 'Purchase' : tx.type,
             amount: Number(tx.amount || 0),
             status: tx.status === 'PAID' ? 'Paid' : tx.status === 'PENDING' ? 'Pending' : tx.status,
             paymentMethod: 'Bank'
           }));
+
+          const salesTx = transactions.filter(t => t.type === 'SALE');
+          const purchaseTx = transactions.filter(t => t.type === 'PURCHASE');
+          const paidTx = transactions.filter(t => t.status === 'PAID');
+
+          const mappedInvoices = salesTx.map((tx, idx) => {
+            const amt = Number(tx.amount || 0);
+            const isPaid = tx.status === 'PAID';
+            const dateStr = tx.transactionDate ? tx.transactionDate.slice(0, 10) : new Date().toISOString().slice(0, 10);
+            const dueDate = new Date(new Date(dateStr).getTime() + 14 * 86400000).toISOString().slice(0, 10);
+            const subtotal = Math.round((amt / 1.18) * 100) / 100;
+            const tax = Math.round((amt - subtotal) * 100) / 100;
+
+            return {
+              id: tx.reference,
+              orderId: `SO-2026-${String(idx + 1).padStart(3, '0')}`,
+              contactId: tx.contactId,
+              customerName: tx.contact?.name || 'Commercial Client',
+              customerEmail: tx.contact?.email || '',
+              customerAddress: 'Commercial Hub',
+              date: dateStr,
+              dueDate,
+              items: [
+                {
+                  productId: 'FUR-COMM',
+                  productName: `Commercial Furniture Order (${tx.reference})`,
+                  quantity: 1,
+                  unitPrice: subtotal,
+                  taxRate: 18,
+                  total: amt
+                }
+              ],
+              subtotal,
+              tax,
+              discount: 0,
+              grandTotal: amt,
+              amountPaid: isPaid ? amt : 0,
+              status: isPaid ? 'Paid' : 'Pending',
+              paymentMethod: isPaid ? 'Bank Transfer' : 'Pending',
+              notes: `Invoice ${tx.reference} for ${tx.contact?.name || 'Customer'}`
+            };
+          });
+
+          const mappedSalesOrders = salesTx.map((tx, idx) => {
+            const amt = Number(tx.amount || 0);
+            const dateStr = tx.transactionDate ? tx.transactionDate.slice(0, 10) : new Date().toISOString().slice(0, 10);
+            const deliveryDate = new Date(new Date(dateStr).getTime() + 7 * 86400000).toISOString().slice(0, 10);
+            const subtotal = Math.round((amt / 1.18) * 100) / 100;
+            const tax = Math.round((amt - subtotal) * 100) / 100;
+
+            return {
+              id: `SO-2026-${String(idx + 1).padStart(3, '0')}`,
+              date: dateStr,
+              contactId: tx.contactId,
+              customerName: tx.contact?.name || 'Commercial Client',
+              expectedDelivery: deliveryDate,
+              items: [
+                {
+                  productId: 'FUR-COMM',
+                  productName: `Furniture Specification Order (${tx.reference})`,
+                  quantity: 1,
+                  unitPrice: subtotal,
+                  taxRate: 18,
+                  total: amt
+                }
+              ],
+              subtotal,
+              tax,
+              discount: 0,
+              grandTotal: amt,
+              status: 'Confirmed'
+            };
+          });
+
+          const mappedBills = purchaseTx.map((tx, idx) => {
+            const amt = Number(tx.amount || 0);
+            const isPaid = tx.status === 'PAID';
+            const dateStr = tx.transactionDate ? tx.transactionDate.slice(0, 10) : new Date().toISOString().slice(0, 10);
+            const dueDate = new Date(new Date(dateStr).getTime() + 30 * 86400000).toISOString().slice(0, 10);
+
+            return {
+              id: tx.reference,
+              poReference: `PO-2026-${String(idx + 1).padStart(3, '0')}`,
+              vendorId: tx.contactId,
+              vendorName: tx.contact?.name || 'Raw Material Supplier',
+              vendorInvoiceNumber: `VN-${String(idx + 1001)}`,
+              date: dateStr,
+              dueDate,
+              items: [
+                {
+                  description: `Procurement Consignment (${tx.reference})`,
+                  quantity: 1,
+                  unitPrice: amt,
+                  total: amt
+                }
+              ],
+              subtotal: amt,
+              tax: 0,
+              total: amt,
+              amountPaid: isPaid ? amt : 0,
+              status: isPaid ? 'Paid' : 'Pending'
+            };
+          });
+
+          const mappedPurchaseOrders = purchaseTx.map((tx, idx) => {
+            const amt = Number(tx.amount || 0);
+            const dateStr = tx.transactionDate ? tx.transactionDate.slice(0, 10) : new Date().toISOString().slice(0, 10);
+            const expectedDate = new Date(new Date(dateStr).getTime() + 10 * 86400000).toISOString().slice(0, 10);
+
+            return {
+              id: `PO-2026-${String(idx + 1).padStart(3, '0')}`,
+              date: dateStr,
+              vendorId: tx.contactId,
+              vendorName: tx.contact?.name || 'Raw Material Supplier',
+              expectedDate,
+              items: [
+                {
+                  productId: 'MAT-RAW',
+                  productName: `Raw Materials & Hardware (${tx.reference})`,
+                  quantity: 1,
+                  unitPrice: amt,
+                  total: amt
+                }
+              ],
+              totalAmount: amt,
+              status: 'Confirmed'
+            };
+          });
+
+          const mappedPayments = paidTx.map((tx, idx) => {
+            const amt = Number(tx.amount || 0);
+            const isSale = tx.type === 'SALE';
+            const dateStr = tx.transactionDate ? tx.transactionDate.slice(0, 10) : new Date().toISOString().slice(0, 10);
+
+            return {
+              id: `PAY-2026-${String(idx + 1).padStart(3, '0')}`,
+              date: dateStr,
+              reference: `NEFT-HDFC-${Math.floor(100000 + (idx * 37) % 900000)}`,
+              type: isSale ? 'Customer Payment' : 'Vendor Payment',
+              contactId: tx.contactId,
+              contactName: tx.contact?.name || 'Contact',
+              invoiceBillId: tx.reference,
+              method: 'Bank',
+              amount: amt,
+              status: 'Completed',
+              notes: `Payment settlement for ${tx.reference}`
+            };
+          });
+
           setData(prev => ({
             ...prev,
             transactions: mappedTx,
-            recentTransactions: mappedTx
+            recentTransactions: mappedTx,
+            invoices: mappedInvoices,
+            salesOrders: mappedSalesOrders,
+            bills: mappedBills,
+            purchaseOrders: mappedPurchaseOrders,
+            payments: mappedPayments
           }));
         }
       } catch (err) {
@@ -273,9 +445,55 @@ export const AppProvider = ({ children }) => {
             };
           });
 
+          // Derive chart of account balances directly from the database journal items
+          let cashBal = 65400;
+          let arBal = 0;
+          let invBal = 0;
+          let apBal = 0;
+          let revBal = 0;
+
+          mappedEntries.forEach(entry => {
+            (entry.lines || []).forEach(line => {
+              const d = Number(line.debit || 0);
+              const c = Number(line.credit || 0);
+              const acct = line.accountName;
+              if (acct === 'Cash') {
+                cashBal += (d - c);
+              } else if (acct === 'Accounts Receivable') {
+                arBal += (d - c);
+              } else if (acct === 'Inventory') {
+                invBal += (d - c);
+              } else if (acct === 'Accounts Payable') {
+                apBal += (c - d);
+              } else if (acct === 'Sales Revenue') {
+                revBal += (c - d);
+              }
+            });
+          });
+
+          const expBal = invBal;
+          const netProfit = revBal - expBal;
+          const totalAssets = cashBal + arBal + invBal + 750000;
+          const totalLiabilities = apBal + 68400 + 350000;
+          const ownerCapital = totalAssets - totalLiabilities - netProfit;
+
+          const updatedAccounts = [
+            { id: "ACC-1010", code: "1010", name: "Cash", category: "Assets", type: "Asset", balance: Math.max(0, cashBal), status: "Active" },
+            { id: "ACC-1100", code: "1100", name: "Accounts Receivable", category: "Assets", type: "Asset", balance: Math.max(0, arBal), status: "Active" },
+            { id: "ACC-1200", code: "1200", name: "Inventory", category: "Assets", type: "Asset", balance: Math.max(0, invBal), status: "Active" },
+            { id: "ACC-1500", code: "1500", name: "Showroom Plant & Equipment", category: "Assets", type: "Asset", balance: 750000, status: "Active" },
+            { id: "ACC-2010", code: "2010", name: "Accounts Payable", category: "Liabilities", type: "Liability", balance: Math.max(0, apBal), status: "Active" },
+            { id: "ACC-2050", code: "2050", name: "Output GST Payable (18%)", category: "Liabilities", type: "Liability", balance: 68400, status: "Active" },
+            { id: "ACC-2080", code: "2080", name: "Bank Term Loan (HDFC)", category: "Liabilities", type: "Liability", balance: 350000, status: "Active" },
+            { id: "ACC-3010", code: "3010", name: "Owner Capital / Equity", category: "Capital", type: "Capital", balance: Math.max(0, ownerCapital), status: "Active" },
+            { id: "ACC-4010", code: "4010", name: "Sales Revenue", category: "Income", type: "Income", balance: Math.max(0, revBal), status: "Active" },
+            { id: "ACC-5010", code: "5010", name: "Cost of Goods Sold (Purchases)", category: "Expenses", type: "Expense", balance: Math.max(0, expBal), status: "Active" }
+          ];
+
           setData(prev => ({
             ...prev,
-            journalEntries: mappedEntries
+            journalEntries: mappedEntries,
+            accounts: updatedAccounts
           }));
         }
       } catch (err) {
@@ -289,16 +507,6 @@ export const AppProvider = ({ children }) => {
     };
   }, []);
 
-  useEffect(() => {
-    if (currentUser && isAuthenticated) {
-      localStorage.setItem('urban_furniture_user_v2', JSON.stringify(currentUser));
-      localStorage.setItem('urban_furniture_auth_v2', 'true');
-    } else {
-      localStorage.removeItem('urban_furniture_user_v2');
-      localStorage.setItem('urban_furniture_auth_v2', 'false');
-    }
-  }, [currentUser, isAuthenticated]);
-
   // Synchronized Role Switcher (updates role, active user profile, and contact ID)
   const setUserRole = (newRole) => {
     setUserRoleState(newRole);
@@ -307,6 +515,14 @@ export const AppProvider = ({ children }) => {
       setCurrentUser(selected);
       if (selected.contactId) {
         setActiveContactId(selected.contactId);
+      }
+      if (isAuthenticated) {
+        try {
+          localStorage.setItem('urban_furniture_user_v2', JSON.stringify(selected));
+          localStorage.setItem('urban_furniture_auth_v2', 'true');
+        } catch (err) {
+          console.error("Storage error updating role", err);
+        }
       }
     }
     addToast({
@@ -331,6 +547,13 @@ export const AppProvider = ({ children }) => {
     };
 
     const finalUser = { ...matchedUser, role };
+    try {
+      localStorage.setItem('urban_furniture_user_v2', JSON.stringify(finalUser));
+      localStorage.setItem('urban_furniture_auth_v2', 'true');
+    } catch (err) {
+      console.error("Storage error during login", err);
+    }
+
     setCurrentUser(finalUser);
     setUserRoleState(role);
     setIsAuthenticated(true);
@@ -346,7 +569,7 @@ export const AppProvider = ({ children }) => {
     return true;
   };
 
-  const signup = ({ name, email, password, role = 'Admin', company = 'Urban Furniture' }) => {
+  const signup = ({ name, email, password: _password, role = 'Admin', company = 'Urban Furniture' }) => {
     const newUser = {
       id: `usr-${Date.now()}`,
       name,
@@ -380,6 +603,13 @@ export const AppProvider = ({ children }) => {
       setActiveContactId(newUser.contactId);
     }
 
+    try {
+      localStorage.setItem('urban_furniture_user_v2', JSON.stringify(newUser));
+      localStorage.setItem('urban_furniture_auth_v2', 'true');
+    } catch (err) {
+      console.error("Storage error during signup", err);
+    }
+
     setCurrentUser(newUser);
     setUserRoleState(role);
     setIsAuthenticated(true);
@@ -393,10 +623,15 @@ export const AppProvider = ({ children }) => {
   };
 
   const logout = () => {
+    try {
+      localStorage.removeItem('urban_furniture_user_v2');
+      localStorage.setItem('urban_furniture_auth_v2', 'false');
+    } catch (err) {
+      console.error("Storage error during logout", err);
+    }
     setIsAuthenticated(false);
     setCurrentUser(null);
-    localStorage.removeItem('urban_furniture_user_v2');
-    localStorage.setItem('urban_furniture_auth_v2', 'false');
+    setUserRoleState('Admin');
     addToast({
       title: "Logged Out",
       message: "You have securely signed out of Urban Furniture ERP.",
@@ -582,6 +817,7 @@ export const AppProvider = ({ children }) => {
         data,
         currentUser,
         isAuthenticated,
+        authInitialized,
         userRole,
         setUserRole,
         demoUsers,
