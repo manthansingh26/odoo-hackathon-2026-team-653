@@ -1,17 +1,18 @@
 # Urban Furniture Accounting System — Team 653
 
-Accounting and ERP management system for an Urban Furniture enterprise: purchase and sales workflows with automatic double-entry ledger posting where **total debit = total credit**, enforced strictly by the centralized `postJournalEntry()` service engine.
+An enterprise-grade Accounting and ERP Management System for commercial furniture manufacturing and retail: purchase and sales workflows with automatic double-entry general ledger posting where **total debit = total credit**, strictly enforced at the database service layer by `postJournalEntry()`.
 
 ---
 
 ## Technology Stack
 
-| Layer | Technology |
-|---|---|
-| **Frontend** | React 19, Vite 8, Plain Vanilla CSS Design System, Responsive Layout |
-| **Backend** | Node.js (v20+), Express.js (ESM), REST API |
-| **Database** | PostgreSQL 16 (Docker container: `recoverai-postgres`), Prisma ORM 6 |
-| **Data Integrity** | Prisma Migrations (safe forward migrations only, no destructive resets) |
+| Layer | Technology | Key Capabilities |
+|---|---|---|
+| **Frontend** | React 19, Vite 8, Tailwind CSS v4 | High-performance responsive ERP dashboard, Lucide React icons, Recharts financial visualizations |
+| **State & Client** | React Context API, Fetch Service | Role-based permission switcher, optimistic updates, and resilient PostgreSQL synchronization |
+| **Backend API** | Node.js (v20+), Express.js (ESM) | Layered REST API (Controllers, Services, Routes, Centralized Error Handling) |
+| **Database & ORM** | PostgreSQL 16, Prisma ORM 6 | Atomic transactions, relational constraints, foreign keys, and double-entry invariants |
+| **Data Integrity** | Prisma Migrations | Safe, version-controlled forward migrations with idempotent realistic demo seeders |
 
 ---
 
@@ -22,125 +23,147 @@ odoo-hackathon-2026-team-653/
 ├── backend/
 │   ├── prisma/
 │   │   ├── migrations/          # Version-controlled database migrations
-│   │   ├── schema.prisma        # Database schema definitions
-│   │   └── seed.js              # Idempotent realistic demo data seeder
+│   │   ├── schema.prisma        # Prisma schema definitions (PostgreSQL single source of truth)
+│   │   └── seed.js              # Idempotent demo data seeder (Contacts, Products, Transactions, Ledger)
 │   ├── src/
-│   │   ├── config/              # Shared Prisma client instance
-│   │   ├── controllers/         # HTTP request/response handlers
-│   │   ├── middleware/          # Centralized error handler
-│   │   ├── routes/              # Express API route declarations
-│   │   ├── services/            # Business logic & double-entry accounting engine
-│   │   ├── utils/               # Shared utility helpers
-│   │   ├── app.js               # Express application configuration & CORS
-│   │   └── server.js            # Server entry point with EADDRINUSE handling
+│   │   ├── config/              # Shared Prisma client singleton
+│   │   ├── controllers/         # HTTP request/response handlers and status codes
+│   │   ├── middleware/          # Centralized error handler and cross-cutting concerns
+│   │   ├── routes/              # Modular Express API route declarations
+│   │   ├── services/            # Business logic & double-entry accounting engine (postJournalEntry)
+│   │   ├── app.js               # Express application configuration, CORS, and health probe
+│   │   └── server.js            # Server entry point with EADDRINUSE conflict handling
 │   ├── .env.example             # Safe template for local environment variables
-│   ├── package.json
-│   └── README.md
+│   └── package.json
 │
 ├── frontend/
-│   ├── public/                  # Static assets & SVG icons
+│   ├── public/                  # Static assets and favicons
 │   ├── src/
-│   │   ├── components/          # Reusable UI components (Sidebar, Header, MetricCard, Modal, StatusBadge)
-│   │   ├── pages/               # Functional view pages (Dashboard, Contacts, Products, Transactions, Journal)
-│   │   ├── services/            # Frontend API client (fetch-based with error handling)
-│   │   ├── index.css            # Dark theme design system and layout rules
-│   │   ├── App.jsx              # Main dashboard application layout & navigation
-│   │   └── main.jsx             # React entry point
-│   ├── index.html
-│   ├── vite.config.js           # Vite configuration with /api reverse proxy
-│   ├── package.json
-│   └── README.md
+│   │   ├── components/
+│   │   │   ├── common/          # Global search palette (Ctrl+K)
+│   │   │   ├── layout/          # Layout wrapper, sticky Navbar, and responsive Sidebar
+│   │   │   ├── modals/          # Quick action modals (Invoices, Bills, Payments, Contacts, Products)
+│   │   │   └── ui/              # Design system primitives (Button, Card, Table, Badge, Modal, Input)
+│   │   ├── context/             # AppContext (global state, auth personas, live API synchronization)
+│   │   ├── data/                # Initial master fixtures and business mock data
+│   │   ├── lib/                 # Utility helpers (cn, Tailwind merge)
+│   │   ├── pages/
+│   │   │   ├── auth/            # Login, Signup, and Demo Persona Switcher
+│   │   │   ├── portal/          # Restricted Client/Vendor Portal (My Invoices, My Bills, My Payments, Profile)
+│   │   │   ├── public/          # Marketing Landing Page
+│   │   │   ├── reports/         # Financial Reports (Profit & Loss, Balance Sheet, Ledger, Stock, Budget)
+│   │   │   ├── Dashboard.jsx    # Real-time Executive KPI Dashboard
+│   │   │   ├── Contacts.jsx     # Customer and Supplier Master
+│   │   │   ├── Products.jsx     # Furniture Inventory Catalog
+│   │   │   ├── Invoices.jsx     # Customer Invoicing and Receivables
+│   │   │   ├── VendorBills.jsx  # Supplier Bills and Payables
+│   │   │   ├── Payments.jsx     # Treasury, Cash Inflows, and Disbursements
+│   │   │   ├── Journals.jsx     # Accounting Journal Master
+│   │   │   └── JournalEntries.jsx # Double-Entry Voucher Audit Trail
+│   │   ├── services/            # Frontend API client (/api reverse-proxy integration)
+│   │   ├── App.jsx              # Application routing and role-guarded routes
+│   │   └── main.jsx             # React DOM entry point
+│   ├── vite.config.js           # Vite configuration with /api reverse proxy to port 4000
+│   └── package.json
 │
-├── .gitignore                   # Ignores .env, node_modules, dist, and local tooling
+├── .gitignore                   # Git exclusion rules
 └── README.md
 ```
 
 ---
 
-## Exact Run Commands (Ubuntu)
+## Quick Start & Run Commands (Linux / macOS / Windows)
 
-### 1. Prerequisites
-Ensure the existing PostgreSQL 16 Docker container is running:
+### 1. Database (PostgreSQL 16)
+Ensure your PostgreSQL Docker container is running:
 ```bash
 docker ps
 ```
-The database connection string:
+Connection string in `backend/.env`:
 ```bash
 DATABASE_URL="postgresql://recoverai:recoverai@localhost:5432/urban_furniture"
 ```
 
-### 2. Backend Setup & Startup
-In your first terminal:
+### 2. Backend API Setup & Startup
+In a terminal tab:
 ```bash
-git clone <repository-url>
-cd odoo-hackathon-2026-team-653
-
 cd backend
 npm install
 
-cp .env.example .env
+# Verify schema and generate Prisma client
+npx prisma generate
 
-# Apply Prisma migrations safely
+# Apply migrations safely
 npm run prisma:migrate -- --name init_accounting_demo
 
-# Seed demo data (Contacts, Products, Transactions, Balanced Journal Entries)
+# Populate realistic demo contacts, products, transactions, and balanced ledger vouchers
 npm run seed
 
-# Start Express server (runs on http://localhost:4000)
+# Start API server in development mode (http://localhost:4000)
 npm run dev
 ```
 
 ### 3. Frontend Setup & Startup
-In a second terminal:
+In a second terminal tab:
 ```bash
-cd odoo-hackathon-2026-team-653/frontend
+cd frontend
 npm install
 
-# Start Vite dev server (runs on http://localhost:5173)
+# Start Vite development server (http://localhost:5173)
 npm run dev
 ```
+
+### 4. Visual Database Inspection (Optional)
+To inspect or edit live database rows in a visual web UI:
+```bash
+cd backend
+npx prisma studio
+```
+Opens Prisma Studio at **`http://localhost:5555`**.
 
 ---
 
 ## System URLs
 
-- **Frontend Application:** [http://localhost:5173](http://localhost:5173)
-- **Backend API:** [http://localhost:4000](http://localhost:4000)
-- **Vite Proxy:** All frontend calls to `/api/*` automatically proxy to `http://localhost:4000/api/*`
+- **Frontend ERP Portal:** [http://localhost:5173](http://localhost:5173)
+- **Backend REST API:** [http://localhost:4000](http://localhost:4000)
+- **API Health Check:** [http://localhost:4000/api/health](http://localhost:4000/api/health)
+- **Prisma Database Studio:** [http://localhost:5555](http://localhost:5555)
+- **Reverse Proxy:** All frontend requests to `/api/*` automatically proxy through Vite to `http://localhost:4000/api/*`.
 
 ---
 
-## Working REST API Endpoints
+## REST API Endpoints
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/api/health` | Health probe (`{"status":"ok","message":"Urban Furniture Accounting API is running"}`) |
-| `GET` | `/api/dashboard/summary` | Real-time totals: `totalSales`, `totalPurchases`, `receivable`, `payable`, `netProfit`, `recentTransactions` |
-| `GET` | `/api/contacts` | List contacts with relationship type (`CUSTOMER` / `VENDOR`) and transaction counts |
-| `POST` | `/api/contacts` | Register a new customer or wood supplier |
-| `GET` | `/api/products` | Inventory catalog with SKU, price, and stock levels |
-| `POST` | `/api/products` | Add new furniture item to catalog |
-| `GET` | `/api/transactions` | Sales & purchases audit log with payment status |
-| `POST` | `/api/transactions` | Post new transaction — **automatically generates balanced double-entry journal items** |
-| `GET` | `/api/journal-entries` | General journal entries with line-by-line debit/credit audit and balanced status |
-| `POST` | `/api/journal-entries` | Post manual journal entry (strictly rejects if `totalDebit !== totalCredit`) |
+| `GET` | `/api/health` | Health probe verification (`{"status":"ok", ...}`) |
+| `GET` | `/api/dashboard/summary` | Live aggregate totals: `totalSales`, `totalPurchases`, `receivable`, `payable`, `netProfit`, `recentTransactions` |
+| `GET` | `/api/contacts` | List contacts with type (`CUSTOMER` / `VENDOR`) and transaction counts |
+| `POST` | `/api/contacts` | Register a new customer or vendor party |
+| `GET` | `/api/products` | Furniture inventory catalog with SKU, price, and current stock |
+| `POST` | `/api/products` | Add a new product or service item to catalog |
+| `GET` | `/api/transactions` | Full audit log of sales and purchases with linked journal entries |
+| `POST` | `/api/transactions` | Create transaction — **automatically generates balanced double-entry ledger items** |
+| `GET` | `/api/journal-entries` | General journal entries with split lines, debit/credit audit, and balanced validation |
+| `POST` | `/api/journal-entries` | Post balanced manual journal entry (rejects if `totalDebit !== totalCredit`) |
 
 ---
 
-## Double-Entry Accounting Invariant
+## Double-Entry Accounting Core Invariant
 
-The core rule of financial integrity is:
+The fundamental principle governing all financial records in the system is:
 $$\sum \text{Debit} = \sum \text{Credit}$$
 
-Every financial transaction posted via `/api/transactions` generates:
-- **Sale:**
-  - If Paid: `Debit: Cash` / `Credit: Sales Revenue`
-  - If Pending: `Debit: Accounts Receivable` / `Credit: Sales Revenue`
-- **Purchase:**
-  - If Paid: `Debit: Inventory` / `Credit: Cash`
-  - If Pending: `Debit: Inventory` / `Credit: Accounts Payable`
+Every financial transaction posted via `/api/transactions` executes an atomic database transaction generating:
+- **Sales Transaction:**
+  - *Paid:* `Debit: Cash` / `Credit: Sales Revenue`
+  - *Pending:* `Debit: Accounts Receivable` / `Credit: Sales Revenue`
+- **Purchase Transaction:**
+  - *Paid:* `Debit: Inventory` / `Credit: Cash`
+  - *Pending:* `Debit: Inventory` / `Credit: Accounts Payable`
 
-Any attempt to post an unbalanced journal entry via `postJournalEntry()` returns HTTP 400:
+Any attempt to commit an unbalanced journal entry is rejected at the service layer before reaching PostgreSQL with HTTP 400:
 ```json
 {
   "error": "Unbalanced entry rejected: debit 5000 != credit 4000"
@@ -149,32 +172,18 @@ Any attempt to post an unbalanced journal entry via `postJournalEntry()` returns
 
 ---
 
-## Mentor Demo Walkthrough
+## Multi-Role Architecture
 
-1. **Dashboard Overview:**
-   - View top summary cards: Total Sales, Total Purchases, Accounts Receivable, Accounts Payable, Net Profit.
-   - View recent transactions fetched live from PostgreSQL.
-2. **Contacts Management:**
-   - Navigate to **Contacts** tab.
-   - Click **+ Add New Contact**, add a supplier (e.g. `Urban Oak Crafts`, `VENDOR`).
-   - Notice the table instantly reflects the newly saved PostgreSQL record.
-3. **Products & Inventory:**
-   - Navigate to **Products** tab to inspect live catalog items, SKUs, and stock quantities.
-   - Click **+ Add Product** to add a new furniture product with unit pricing and stock.
-4. **Transactions & Automated Double-Entry:**
-   - Navigate to **Transactions** tab.
-   - Click **+ Post New Transaction**, select a contact, specify type (Sale/Purchase) and amount.
-   - Notice that both the Transaction document and its balanced Journal Entry are atomically created in the database.
-5. **General Journal Ledger:**
-   - Navigate to **Journal Entries** tab.
-   - Inspect line items showing explicit debit and credit amounts.
-   - Note the **✓ Balanced** badge on every valid entry.
-   - Try posting a test manual journal entry with unbalanced amounts to see the backend invariant rejection in action.
+The system supports distinct operational perspectives via role-based access control:
+
+1. **Admin:** Full administrative control over ERP configuration, system settings, master data, and executive dashboards.
+2. **Accountant:** Specialized accounting access focused on Chart of Accounts, Journal Vouchers, Financial Reporting (P&L, Balance Sheet), and General Ledger auditing.
+3. **Contact User (Client / Vendor Portal):** Restricted external access enabling customers and suppliers to view their own invoices, vendor bills, payment receipts, and profile details without exposure to confidential corporate metrics.
 
 ---
 
 ## Project Roadmap
 
-- **Milestone 1 (Complete):** Core vertical slice, Docker PostgreSQL 16 connection, Prisma schema & migrations, Express REST API, seed data, accounting dashboard with dark theme, contacts, products, transactions, and balanced journal entries.
-- **Milestone 2 (Next):** User authentication (bcrypt + JWT http-only cookies), PDF invoice generation, multi-mode payment reconciliation.
-- **Milestone 3:** Advanced financial reporting (Balance Sheet, Profit & Loss statement, Aged Receivables, Tax GST computation).
+- **Milestone 1 (Complete):** Core vertical slice, PostgreSQL 16 Docker container, Prisma schema, Express REST API, balanced seed dataset, and basic accounting views.
+- **Milestone 2 (Complete):** Complete ERP redesign, multi-role client portal, live double-entry journal vouchers, comprehensive financial statements (P&L, Balance Sheet, Stock Valuation, General Ledger), and robust error handling.
+- **Milestone 3 (Upcoming):** Multi-currency support, automated bank statement reconciliation, and GST e-invoicing export.
