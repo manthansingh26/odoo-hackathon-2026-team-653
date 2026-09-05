@@ -96,14 +96,6 @@ export const Sidebar = ({ onCloseMobile }) => {
               Customer Portal
             </div>
             <NavLink
-              to="/dashboard"
-              onClick={onCloseMobile}
-              className={({ isActive }) => cn(linkBase, isActive ? linkActive : linkInactive)}
-            >
-              <LayoutDashboard className="w-4 h-4" />
-              <span>Dashboard</span>
-            </NavLink>
-            <NavLink
               to="/my-invoices"
               onClick={onCloseMobile}
               className={({ isActive }) => cn(linkBase, isActive ? linkActive : linkInactive)}

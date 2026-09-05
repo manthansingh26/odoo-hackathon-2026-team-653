@@ -8,7 +8,7 @@ export const MyPayments = () => {
   const { data, activeContactId, formatINR } = useAppContext();
 
   const myPayments = (data.payments || []).filter(
-    p => p.contactId === activeContactId || p.contactName.toLowerCase().includes('nimesh')
+    p => p.contactId === activeContactId
   );
 
   return (
