@@ -63,7 +63,10 @@ function App() {
         }
       >
         {/* Core & Overview */}
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route
+          path="/dashboard"
+          element={!isContact ? <Dashboard /> : <Navigate to="/my-invoices" replace />}
+        />
 
         {/* Master Data (Admin & Accountant only) */}
         <Route
@@ -120,43 +123,43 @@ function App() {
         {/* Management & Cost Centers */}
         <Route
           path="budget"
-          element={!isContact ? <Budget /> : <Navigate to="/dashboard" replace />}
+          element={!isContact ? <Budget /> : <Navigate to="/my-invoices" replace />}
         />
         <Route
           path="analytic-accounts"
-          element={!isContact ? <AnalyticAccounts /> : <Navigate to="/dashboard" replace />}
+          element={!isContact ? <AnalyticAccounts /> : <Navigate to="/my-invoices" replace />}
         />
 
         {/* Financial Reports Hub & Sub-reports (Admin & Accountant only) */}
         <Route
           path="reports"
-          element={!isContact ? <ReportsHub /> : <Navigate to="/dashboard" replace />}
+          element={!isContact ? <ReportsHub /> : <Navigate to="/my-invoices" replace />}
         />
         <Route
           path="reports/profit-loss"
-          element={!isContact ? <ProfitLossReport /> : <Navigate to="/dashboard" replace />}
+          element={!isContact ? <ProfitLossReport /> : <Navigate to="/my-invoices" replace />}
         />
         <Route
           path="reports/balance-sheet"
-          element={!isContact ? <BalanceSheetReport /> : <Navigate to="/dashboard" replace />}
+          element={!isContact ? <BalanceSheetReport /> : <Navigate to="/my-invoices" replace />}
         />
         <Route
           path="reports/budget"
-          element={!isContact ? <BudgetReport /> : <Navigate to="/dashboard" replace />}
+          element={!isContact ? <BudgetReport /> : <Navigate to="/my-invoices" replace />}
         />
         <Route
           path="reports/stock"
-          element={!isContact ? <StockReport /> : <Navigate to="/dashboard" replace />}
+          element={!isContact ? <StockReport /> : <Navigate to="/my-invoices" replace />}
         />
         <Route
           path="reports/ledger"
-          element={!isContact ? <LedgerReport /> : <Navigate to="/dashboard" replace />}
+          element={!isContact ? <LedgerReport /> : <Navigate to="/my-invoices" replace />}
         />
 
         {/* Settings (Admin Only) */}
         <Route
           path="settings"
-          element={isAdmin ? <Settings /> : <Navigate to="/dashboard" replace />}
+          element={isAdmin ? <Settings /> : (isContact ? <Navigate to="/my-invoices" replace /> : <Navigate to="/dashboard" replace />)}
         />
 
         {/* Contact User Restricted Portal */}
@@ -166,7 +169,7 @@ function App() {
         <Route path="profile" element={<ProfilePage />} />
 
         {/* 404 Fallback */}
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<Navigate to={isContact ? "/my-invoices" : "/dashboard"} replace />} />
       </Route>
     </Routes>
   );
