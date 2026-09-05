@@ -1,33 +1,16 @@
-# Urban Furniture Accounting — Frontend Client
+# React + Vite
 
-Single Page Application (SPA) dashboard for the Urban Furniture Accounting System built with React 19 and Vite.
+This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 
-## Architecture
+Currently, two official plugins are available:
 
-- **Core:** React 19, Vite 8
-- **Styling:** Custom vanilla CSS design system (`src/index.css`) featuring deep dark palette (`#0a0d14`), warm wood amber accents (`#d97706`), metric cards, data tables, status badges, and accessible modal dialogs.
-- **API Client:** `src/services/api.js` utilizing native `fetch` and Vite development reverse-proxy.
-- **Directory Structure:**
-  - `src/components/` — Reusable UI components (Sidebar, Header, MetricCard, Modal, StatusBadge)
-  - `src/pages/` — Feature views (DashboardPage, ContactsPage, ProductsPage, TransactionsPage, JournalPage, PlaceholderPage)
-  - `src/services/` — Backend API communication layer
-  - `public/` — Static assets and favicon
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
-## Getting Started
+## React Compiler
 
-### 1. Install Dependencies
-```bash
-npm install
-```
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-### 2. Start Development Server
-```bash
-npm run dev
-```
-Access the application at `http://localhost:5173`. API requests to `/api/*` are automatically forwarded to `http://localhost:4000` via the Vite reverse proxy configured in `vite.config.js`.
+## Expanding the Oxlint configuration
 
-### 3. Build & Quality Verification
-```bash
-npm run lint    # Oxlint static analysis
-npm run build   # Production asset compilation
-```
+If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.

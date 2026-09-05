@@ -1,36 +1,36 @@
 /**
  * API client for Urban Furniture Accounting System.
- * Uses relative `/api` paths handled by Vite proxy in development.
+ * Connects to the Express backend via relative `/api` paths proxied by Vite.
  */
 
 async function request(path, options = {}) {
-  const url = `/api${path}`
+  const url = `/api${path}`;
   const headers = {
     'Content-Type': 'application/json',
     ...(options.headers || {}),
-  }
+  };
 
   const response = await fetch(url, {
     ...options,
     headers,
-  })
+  });
 
   if (!response.ok) {
-    let errorMessage = `Request failed with status ${response.status}`
+    let errorMessage = `Request failed with status ${response.status}`;
     try {
-      const errData = await response.json()
+      const errData = await response.json();
       if (errData && errData.error) {
-        errorMessage = errData.error
+        errorMessage = errData.error;
       }
     } catch {
       // ignore JSON parse error
     }
-    const error = new Error(errorMessage)
-    error.status = response.status
-    throw error
+    const error = new Error(errorMessage);
+    error.status = response.status;
+    throw error;
   }
 
-  return response.json()
+  return response.json();
 }
 
 export const api = {
@@ -60,4 +60,4 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(data),
     }),
-}
+};
