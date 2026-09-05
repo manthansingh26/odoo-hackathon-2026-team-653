@@ -8,10 +8,52 @@ Accounting and ERP management system for an Urban Furniture enterprise: purchase
 
 | Layer | Technology |
 |---|---|
-| **Frontend** | React 19, Vite, Plain Vanilla CSS Design System, Responsive Layout |
+| **Frontend** | React 19, Vite 8, Plain Vanilla CSS Design System, Responsive Layout |
 | **Backend** | Node.js (v20+), Express.js (ESM), REST API |
 | **Database** | PostgreSQL 16 (Docker container: `recoverai-postgres`), Prisma ORM 6 |
 | **Data Integrity** | Prisma Migrations (safe forward migrations only, no destructive resets) |
+
+---
+
+## Project Structure
+
+```
+odoo-hackathon-2026-team-653/
+├── backend/
+│   ├── prisma/
+│   │   ├── migrations/          # Version-controlled database migrations
+│   │   ├── schema.prisma        # Database schema definitions
+│   │   └── seed.js              # Idempotent realistic demo data seeder
+│   ├── src/
+│   │   ├── config/              # Shared Prisma client instance
+│   │   ├── controllers/         # HTTP request/response handlers
+│   │   ├── middleware/          # Centralized error handler
+│   │   ├── routes/              # Express API route declarations
+│   │   ├── services/            # Business logic & double-entry accounting engine
+│   │   ├── utils/               # Shared utility helpers
+│   │   ├── app.js               # Express application configuration & CORS
+│   │   └── server.js            # Server entry point with EADDRINUSE handling
+│   ├── .env.example             # Safe template for local environment variables
+│   ├── package.json
+│   └── README.md
+│
+├── frontend/
+│   ├── public/                  # Static assets & SVG icons
+│   ├── src/
+│   │   ├── components/          # Reusable UI components (Sidebar, Header, MetricCard, Modal, StatusBadge)
+│   │   ├── pages/               # Functional view pages (Dashboard, Contacts, Products, Transactions, Journal)
+│   │   ├── services/            # Frontend API client (fetch-based with error handling)
+│   │   ├── index.css            # Dark theme design system and layout rules
+│   │   ├── App.jsx              # Main dashboard application layout & navigation
+│   │   └── main.jsx             # React entry point
+│   ├── index.html
+│   ├── vite.config.js           # Vite configuration with /api reverse proxy
+│   ├── package.json
+│   └── README.md
+│
+├── .gitignore                   # Ignores .env, node_modules, dist, and local tooling
+└── README.md
+```
 
 ---
 

@@ -15,8 +15,10 @@ logs/
 *.log
 npm-debug.log*
 
-# OS / editor noise
-.DS_Store
-Thumbs.db
+# AI & Editor Local State
+.claude/
+.claude-flow/
 .idea/
 .vscode/
+.DS_Store
+Thumbs.db
