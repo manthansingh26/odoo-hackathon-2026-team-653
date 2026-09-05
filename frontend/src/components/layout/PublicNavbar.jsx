@@ -4,7 +4,7 @@ import { ArrowRight, Menu, X } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { Button } from '../ui/Button';
 
-export const PublicNavbar = ({ onOpenAuth }) => {
+export const PublicNavbar = ({ onOpenAuth, onOpenDoubleEntry }) => {
   const { isAuthenticated } = useAppContext();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -24,6 +24,15 @@ export const PublicNavbar = ({ onOpenAuth }) => {
       onOpenAuth('signup');
     } else {
       navigate('/signup');
+    }
+  };
+
+  const handleDoubleEntry = (e) => {
+    if (onOpenDoubleEntry) {
+      e.preventDefault();
+      onOpenDoubleEntry();
+    } else {
+      navigate('/#accounting');
     }
   };
 
@@ -50,7 +59,13 @@ export const PublicNavbar = ({ onOpenAuth }) => {
           <a href="/#features" className="hover:text-neutral-950 transition-colors">Features</a>
           <a href="/#metrics" className="hover:text-neutral-950 transition-colors">Metrics</a>
           <a href="/#roles" className="hover:text-neutral-950 transition-colors">Role Architecture</a>
-          <a href="/#accounting" className="hover:text-neutral-950 transition-colors">Double-Entry</a>
+          <a
+            href="/#accounting"
+            onClick={handleDoubleEntry}
+            className="hover:text-neutral-950 transition-colors cursor-pointer"
+          >
+            Double-Entry
+          </a>
         </nav>
 
         {/* Right Action CTA Buttons (Desktop) */}
@@ -136,6 +151,16 @@ export const PublicNavbar = ({ onOpenAuth }) => {
               className="p-2 rounded-md hover:bg-neutral-100 hover:text-neutral-950 transition-colors"
             >
               Role Architecture
+            </a>
+            <a
+              href="/#accounting"
+              onClick={(e) => {
+                setMobileMenuOpen(false);
+                handleDoubleEntry(e);
+              }}
+              className="p-2 rounded-md hover:bg-neutral-100 hover:text-neutral-950 transition-colors cursor-pointer"
+            >
+              Double-Entry
             </a>
           </nav>
           <div className="pt-2 border-t border-neutral-100 flex flex-col gap-2">

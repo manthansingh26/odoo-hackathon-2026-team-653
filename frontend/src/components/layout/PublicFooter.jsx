@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../../context/AppContext';
 
-export const PublicFooter = ({ onOpenAuth }) => {
+export const PublicFooter = ({ onOpenAuth, onOpenDoubleEntry }) => {
   const { isAuthenticated } = useAppContext();
   const navigate = useNavigate();
 
@@ -21,6 +21,15 @@ export const PublicFooter = ({ onOpenAuth }) => {
       onOpenAuth('signup');
     } else {
       navigate('/signup');
+    }
+  };
+
+  const handleDoubleEntry = (e) => {
+    if (onOpenDoubleEntry) {
+      e.preventDefault();
+      onOpenDoubleEntry();
+    } else {
+      navigate('/#accounting');
     }
   };
 
@@ -46,6 +55,13 @@ export const PublicFooter = ({ onOpenAuth }) => {
           <a href="/#features" className="hover:text-neutral-950 transition-colors">Features</a>
           <a href="/#metrics" className="hover:text-neutral-950 transition-colors">Metrics</a>
           <a href="/#roles" className="hover:text-neutral-950 transition-colors">Roles</a>
+          <a
+            href="/#accounting"
+            onClick={handleDoubleEntry}
+            className="hover:text-neutral-950 transition-colors cursor-pointer"
+          >
+            Double-Entry
+          </a>
           {!isAuthenticated ? (
             <>
               <button
