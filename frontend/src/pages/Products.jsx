@@ -98,6 +98,7 @@ export const Products = () => {
 
   const handleSaveProduct = (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
 
     const valResult = validateProductForm(formData, data.products || [], editingProduct?.id);
     if (!valResult.isValid) {

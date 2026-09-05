@@ -64,7 +64,7 @@ export const Signup = () => {
 
         {/* Signup Form */}
         <div className="bg-white p-6 rounded-xl border border-neutral-200 shadow-xs">
-          <form onSubmit={handleSubmit} className="space-y-3.5 text-xs">
+          <form onSubmit={handleSubmit} noValidate className="space-y-3.5 text-xs">
             <div>
               <label className="font-semibold text-neutral-700 block mb-1">Full Name *</label>
               <div className="relative">

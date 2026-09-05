@@ -120,6 +120,22 @@ export const AppProvider = ({ children }) => {
 
     async function loadBackendData() {
       try {
+        let token = localStorage.getItem('urban_furniture_jwt_token');
+        if (!token) {
+          const authUser = currentUser || demoUsers[userRole] || demoUsers['Admin'];
+          const authRes = await api.login({
+            email: authUser.email || 'admin@urbanfurniture.in',
+            role: authUser.role || 'Admin',
+          });
+          if (authRes?.token) {
+            localStorage.setItem('urban_furniture_jwt_token', authRes.token);
+          }
+        }
+      } catch (_authErr) {
+        // continue
+      }
+
+      try {
         const health = await api.getHealth();
         if (health?.status === 'ok') {
           console.log('[API] Connected to Urban Furniture Backend:', health.message);
@@ -534,6 +550,13 @@ export const AppProvider = ({ children }) => {
 
   // Authentication methods
   const login = (email, password, role = 'Admin') => {
+    // API backend authentication
+    api.login({ email, role }).then(res => {
+      if (res?.token) {
+        localStorage.setItem('urban_furniture_jwt_token', res.token);
+      }
+    }).catch(err => console.warn('[API] Login sync warning:', err.message));
+
     // If a demo user matches role or email
     const matchedUser = Object.values(demoUsers).find(
       u => u.email.toLowerCase() === email.toLowerCase() || u.role === role
@@ -610,6 +633,13 @@ export const AppProvider = ({ children }) => {
       console.error("Storage error during signup", err);
     }
 
+    // Backend auth sync
+    api.login({ email, role }).then(res => {
+      if (res?.token) {
+        localStorage.setItem('urban_furniture_jwt_token', res.token);
+      }
+    }).catch(() => {});
+
     setCurrentUser(newUser);
     setUserRoleState(role);
     setIsAuthenticated(true);
@@ -625,10 +655,12 @@ export const AppProvider = ({ children }) => {
   const logout = () => {
     try {
       localStorage.removeItem('urban_furniture_user_v2');
+      localStorage.removeItem('urban_furniture_jwt_token');
       localStorage.setItem('urban_furniture_auth_v2', 'false');
     } catch (err) {
       console.error("Storage error during logout", err);
     }
+    api.logout().catch(() => {});
     setIsAuthenticated(false);
     setCurrentUser(null);
     setUserRoleState('Admin');
@@ -685,36 +717,102 @@ export const AppProvider = ({ children }) => {
         name: record.name,
         type: (record.type || 'Customer').toUpperCase(),
         email: record.email || '',
-        phone: record.mobile || record.phone || ''
+        phone: record.mobile || record.phone || '',
+        pincode: record.pincode || '',
       }).catch(err => console.warn('[API] Contact sync warning:', err.message));
     } else if (collection === 'products') {
       api.createProduct({
         name: record.name,
         sku: record.code || record.sku || `SKU-${Date.now().toString().slice(-4)}`,
         price: Number(record.salesPrice || record.price || 0),
-        stock: Number(record.stock || 0)
+        stock: Number(record.stock || 0),
       }).catch(err => console.warn('[API] Product sync warning:', err.message));
-    } else if (collection === 'transactions' || collection === 'recentTransactions') {
+    } else if (collection === 'invoices') {
+      api.createInvoice({
+        contactId: record.contactId,
+        reference: record.id,
+        items: record.items || [],
+        discount: record.discount || 0,
+        date: record.date,
+        dueDate: record.dueDate,
+        grandTotal: record.grandTotal,
+      }).then(res => {
+        if (res?.journalEntry) {
+          api.getJournalEntries().then(entries => {
+            if (Array.isArray(entries)) setData(prev => ({ ...prev, journalEntries: entries }));
+          }).catch(() => {});
+        }
+      }).catch(err => console.warn('[API] Invoice sync warning:', err.message));
+    } else if (collection === 'bills') {
+      api.createBill({
+        vendorId: record.vendorId || record.contactId,
+        reference: record.id,
+        amount: record.total || record.subtotal || record.amount,
+        date: record.date,
+        dueDate: record.dueDate,
+        vendorInvNo: record.vendorInvoiceNumber,
+        description: record.items?.[0]?.description,
+      }).then(res => {
+        if (res?.journalEntry) {
+          api.getJournalEntries().then(entries => {
+            if (Array.isArray(entries)) setData(prev => ({ ...prev, journalEntries: entries }));
+          }).catch(() => {});
+        }
+      }).catch(err => console.warn('[API] Bill sync warning:', err.message));
+    } else if (collection === 'payments') {
+      api.createPayment({
+        contactId: record.contactId,
+        type: record.type,
+        amount: record.amount,
+        date: record.date,
+        method: record.method || 'Bank',
+        reference: record.reference || record.id,
+        invoiceBillId: record.invoiceBillId,
+        notes: record.notes,
+      }).then(res => {
+        if (res?.journalEntry) {
+          api.getJournalEntries().then(entries => {
+            if (Array.isArray(entries)) setData(prev => ({ ...prev, journalEntries: entries }));
+          }).catch(() => {});
+        }
+      }).catch(err => console.warn('[API] Payment sync warning:', err.message));
+    } else if (collection === 'salesOrders') {
+      api.createSalesOrder({
+        contactId: record.contactId,
+        reference: record.id,
+        amount: record.grandTotal || record.totalAmount,
+        items: record.items,
+        date: record.date,
+      }).catch(err => console.warn('[API] Sales order sync warning:', err.message));
+    } else if (collection === 'purchaseOrders') {
+      api.createPurchaseOrder({
+        vendorId: record.vendorId || record.contactId,
+        reference: record.id,
+        amount: record.totalAmount,
+        items: record.items,
+        date: record.date,
+      }).catch(err => console.warn('[API] Purchase order sync warning:', err.message));
+    } else if (collection === 'transactions') {
       api.createTransaction({
         type: (record.type || 'SALE').toUpperCase() === 'SALES' ? 'SALE' : (record.type || 'SALE').toUpperCase(),
         reference: record.reference || `TX-${Date.now().toString().slice(-4)}`,
         contactId: record.contactId,
         amount: Number(record.amount || 0),
         status: (record.status || 'PAID').toUpperCase(),
-        transactionDate: record.date || new Date().toISOString()
+        transactionDate: record.date || new Date().toISOString(),
       }).catch(err => console.warn('[API] Transaction sync warning:', err.message));
     } else if (collection === 'journalEntries') {
       const cleanLines = (record.lines || record.items || []).map(l => ({
         accountName: (l.accountName || 'General Account').trim(),
         debit: Number(l.debit || 0),
-        credit: Number(l.credit || 0)
+        credit: Number(l.credit || 0),
       }));
 
       api.createJournalEntry({
         reference: record.reference || record.id || `JE-${Date.now().toString().slice(-4)}`,
         description: (record.description || record.notes || 'General Journal Entry').trim(),
         transactionDate: record.transactionDate || (record.date ? new Date(record.date).toISOString() : new Date().toISOString()),
-        lines: cleanLines
+        lines: cleanLines,
       }).then(res => {
         if (res?.entry) {
           setData(prev => ({
@@ -727,10 +825,10 @@ export const AppProvider = ({ children }) => {
                     reference: res.entry.reference,
                     transactionDate: res.entry.transactionDate,
                     totalDebit: res.totalDebit !== undefined ? Number(res.totalDebit) : e.totalDebit,
-                    totalCredit: res.totalCredit !== undefined ? Number(res.totalCredit) : e.totalCredit
+                    totalCredit: res.totalCredit !== undefined ? Number(res.totalCredit) : e.totalCredit,
                   }
                 : e
-            )
+            ),
           }));
         }
       }).catch(err => console.warn('[API] Journal entry sync warning:', err.message));
@@ -744,13 +842,34 @@ export const AppProvider = ({ children }) => {
       ...prev,
       [collection]: (prev[collection] || []).map(item =>
         item.id === id ? { ...item, ...updatedRecord } : item
-      )
+      ),
     }));
     addToast({
       title: "Updated",
       message: `Successfully updated record #${id}`,
-      type: "info"
+      type: "info",
     });
+
+    // Backend sync for status updates
+    if (collection === 'invoices' && updatedRecord.status === 'Paid') {
+      api.payInvoice(id, {
+        method: updatedRecord.paymentMethod || 'Bank',
+        amount: updatedRecord.amountPaid,
+      }).then(() => {
+        api.getJournalEntries().then(entries => {
+          if (Array.isArray(entries)) setData(prev => ({ ...prev, journalEntries: entries }));
+        }).catch(() => {});
+      }).catch(err => console.warn('[API] Invoice payment sync warning:', err.message));
+    } else if (collection === 'bills' && updatedRecord.status === 'Paid') {
+      api.payBill(id, {
+        method: updatedRecord.paymentMethod || 'Bank',
+        amount: updatedRecord.amountPaid,
+      }).then(() => {
+        api.getJournalEntries().then(entries => {
+          if (Array.isArray(entries)) setData(prev => ({ ...prev, journalEntries: entries }));
+        }).catch(() => {});
+      }).catch(err => console.warn('[API] Bill payment sync warning:', err.message));
+    }
   };
 
   const deleteRecord = (collection, id) => {

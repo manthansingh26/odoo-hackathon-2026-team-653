@@ -64,6 +64,13 @@ export async function createContact(data) {
     cleanPhone = trimmedPhone
   }
 
+  if (data.pincode !== undefined && data.pincode !== null && String(data.pincode).trim() !== '') {
+    const cleanPin = String(data.pincode).trim()
+    if (!/^\d{6}$/.test(cleanPin)) {
+      throw httpError(400, 'Invalid pincode (must be exactly 6 digits, e.g. 400001)')
+    }
+  }
+
   return prisma.contact.create({
     data: {
       name: trimmedName,

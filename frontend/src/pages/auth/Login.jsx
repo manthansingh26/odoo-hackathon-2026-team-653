@@ -7,9 +7,10 @@ import { Input, Select } from '../../components/ui/Input';
 import { Badge } from '../../components/ui/Badge';
 import { PublicNavbar } from '../../components/layout/PublicNavbar';
 import { PublicFooter } from '../../components/layout/PublicFooter';
+import { validateEmail } from '../../utils/validation';
 
 export const Login = () => {
-  const { login, demoUsers, isAuthenticated } = useAppContext();
+  const { login, demoUsers, isAuthenticated, addToast } = useAppContext();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -17,6 +18,7 @@ export const Login = () => {
   const [selectedRole, setSelectedRole] = useState(initialRole);
   const [email, setEmail] = useState(demoUsers[initialRole]?.email || 'admin@urbanfurniture.in');
   const [password, setPassword] = useState('password123');
+  const [errors, setErrors] = useState({});
 
   // If already logged in, redirect to dashboard
   useEffect(() => {
@@ -31,11 +33,13 @@ export const Login = () => {
       const role = location.state.role;
       setSelectedRole(role);
       setEmail(demoUsers[role].email);
+      setErrors({});
     }
   }, [location.state, demoUsers]);
 
   // Quick 1-click demo login
   const handleQuickDemo = (roleKey) => {
+    setErrors({});
     const demo = demoUsers[roleKey];
     setEmail(demo.email);
     setSelectedRole(roleKey);
@@ -45,6 +49,23 @@ export const Login = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const newErrors = {};
+    const emailErr = validateEmail(email, true);
+    if (emailErr) newErrors.email = emailErr;
+    if (!password || !password.trim()) {
+      newErrors.password = 'Password is required.';
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      addToast({
+        type: 'error',
+        message: 'Please enter valid login credentials.'
+      });
+      return;
+    }
+
+    setErrors({});
     login(email, password, selectedRole);
     navigate('/dashboard');
   };
@@ -126,7 +147,7 @@ export const Login = () => {
 
         {/* Credentials Form */}
         <div className="bg-white p-6 rounded-xl border border-neutral-200 shadow-xs">
-          <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+          <form onSubmit={handleSubmit} noValidate className="space-y-4 text-xs">
             <div>
               <label className="font-semibold text-neutral-700 block mb-1">Select Access Role *</label>
               <Select
@@ -151,7 +172,11 @@ export const Login = () => {
                   type="email"
                   required
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (errors.email) setErrors(prev => ({ ...prev, email: null }));
+                  }}
+                  error={errors.email}
                   className="pl-9"
                   placeholder="name@company.com"
                 />
@@ -169,7 +194,11 @@ export const Login = () => {
                   type="password"
                   required
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (errors.password) setErrors(prev => ({ ...prev, password: null }));
+                  }}
+                  error={errors.password}
                   className="pl-9"
                 />
               </div>

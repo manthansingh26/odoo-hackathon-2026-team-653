@@ -71,6 +71,7 @@ export const PurchaseOrders = () => {
 
   const handleCreatePO = (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
 
     const valResult = validateInvoiceOrBillForm({
       contactId: vendorId,

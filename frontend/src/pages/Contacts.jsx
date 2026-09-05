@@ -101,6 +101,7 @@ export const Contacts = () => {
 
   const handleSaveContact = (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
 
     const valResult = validateContactForm(formData);
     if (!valResult.isValid) {

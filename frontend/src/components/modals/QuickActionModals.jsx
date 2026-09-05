@@ -133,6 +133,7 @@ const InvoiceModal = ({ onClose, data, addRecord, addToast }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
 
     const valResult = validateInvoiceOrBillForm({
       contactId,
@@ -408,6 +409,7 @@ const BillModal = ({ onClose, data, addRecord, addToast }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
 
     const valResult = validateInvoiceOrBillForm({
       contactId: vendorId,
@@ -581,6 +583,7 @@ const PaymentModal = ({ onClose, data, addRecord, addToast }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
 
     const valResult = validatePaymentForm({
       contactId,
@@ -754,6 +757,7 @@ const ContactModal = ({ onClose, addRecord, addToast }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
 
     const valResult = validateContactForm(formData);
     if (!valResult.isValid) {
@@ -921,6 +925,7 @@ const ProductModal = ({ onClose, data, addRecord, addToast }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
 
     const valResult = validateProductForm(formData, data?.products || []);
     if (!valResult.isValid) {

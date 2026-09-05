@@ -24,6 +24,7 @@ export const JournalEntries = () => {
   const [isCreatorOpen, setIsCreatorOpen] = useState(false);
   const [viewingEntry, setViewingEntry] = useState(null);
   const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // New Journal Entry state
   const [journal, setJournal] = useState('Sales Journal');
@@ -98,6 +99,7 @@ export const JournalEntries = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
 
     const validation = validateJournalEntryForm({
       date,
@@ -122,6 +124,7 @@ export const JournalEntries = () => {
       return;
     }
 
+    setIsSubmitting(true);
     setErrors({});
 
     const cleanLines = lines.map(l => {
@@ -158,6 +161,7 @@ export const JournalEntries = () => {
     });
 
     setIsCreatorOpen(false);
+    setIsSubmitting(false);
     setReference(`JE-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`);
     setDescription('');
   };
@@ -448,8 +452,8 @@ export const JournalEntries = () => {
             >
               Cancel
             </Button>
-            <Button type="submit" variant="primary" size="sm" disabled={!isBalanced || totalDebit === 0}>
-              Post Journal Voucher
+            <Button type="submit" variant="primary" size="sm" disabled={isSubmitting || !isBalanced || totalDebit === 0}>
+              {isSubmitting ? 'Posting...' : 'Post Journal Voucher'}
             </Button>
           </div>
         </form>

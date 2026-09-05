@@ -76,6 +76,7 @@ export const SalesOrders = () => {
 
   const handleCreateOrder = (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
 
     const valResult = validateInvoiceOrBillForm({
       contactId: customerContactId,
