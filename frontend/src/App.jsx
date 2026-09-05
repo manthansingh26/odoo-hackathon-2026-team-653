@@ -59,7 +59,7 @@ function App() {
       {/* Authenticated Workspace wrapped in Layout */}
       <Route
         element={
-          isAuthenticated ? <Layout /> : <Navigate to="/login" replace />
+          isAuthenticated ? <Layout /> : <Navigate to="/" replace />
         }
       >
         {/* Core & Overview */}

@@ -4,6 +4,8 @@ import { User, Mail, Lock, Building, ArrowRight, ShieldCheck } from 'lucide-reac
 import { useAppContext } from '../../context/AppContext';
 import { Button } from '../../components/ui/Button';
 import { Input, Select } from '../../components/ui/Input';
+import { PublicNavbar } from '../../components/layout/PublicNavbar';
+import { PublicFooter } from '../../components/layout/PublicFooter';
 
 export const Signup = () => {
   const { signup, isAuthenticated } = useAppContext();
@@ -30,9 +32,12 @@ export const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen w-screen bg-[#fafafa] flex flex-col justify-center items-center p-4 sm:p-6">
-      <div className="w-full max-w-md space-y-6">
-        {/* Brand Header */}
+    <div className="min-h-screen bg-[#fafafa] flex flex-col justify-between text-neutral-900 font-sans antialiased selection:bg-neutral-900 selection:text-white">
+      <PublicNavbar />
+
+      <main className="flex-1 flex flex-col justify-center items-center px-4 pt-24 pb-16 sm:pt-28 sm:pb-20">
+        <div className="w-full max-w-md space-y-6">
+          {/* Brand Header */}
         <div className="text-center space-y-1">
           <div className="inline-flex items-center justify-center p-3 bg-neutral-950 text-white rounded-xl shadow-xs mb-2">
             <span className="text-xl font-black font-mono tracking-widest uppercase">URBAN</span>
@@ -131,6 +136,9 @@ export const Signup = () => {
           </div>
         </div>
       </div>
+    </main>
+
+    <PublicFooter />
     </div>
   );
 };
