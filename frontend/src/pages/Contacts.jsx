@@ -118,10 +118,10 @@ export const Contacts = () => {
       const matchTab = activeTab === 'All' || contact.type === activeTab;
       const q = searchQuery.toLowerCase();
       const matchSearch =
-        contact.name.toLowerCase().includes(q) ||
-        contact.email.toLowerCase().includes(q) ||
-        contact.city.toLowerCase().includes(q) ||
-        contact.mobile.includes(q);
+        (contact.name || '').toLowerCase().includes(q) ||
+        (contact.email || '').toLowerCase().includes(q) ||
+        (contact.city || '').toLowerCase().includes(q) ||
+        (contact.mobile || contact.phone || '').includes(q);
       return matchTab && matchSearch;
     });
   }, [data.contacts, activeTab, searchQuery]);
