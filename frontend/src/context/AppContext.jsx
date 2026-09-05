@@ -438,14 +438,14 @@ export const AppProvider = ({ children }) => {
       ...prev,
       [collection]: [newRecord, ...(prev[collection] || [])]
     }));
-    addToast({
-      title: "Success",
-      message: `Created new item in ${collection}`,
-      type: "success"
-    });
 
     // Asynchronously persist to backend API if applicable
     if (collection === 'contacts') {
+      addToast({
+        title: "Success",
+        message: `Created new item in ${collection}`,
+        type: "success"
+      });
       api.createContact({
         name: record.name,
         type: (record.type || 'Customer').toUpperCase(),
@@ -453,6 +453,11 @@ export const AppProvider = ({ children }) => {
         phone: record.mobile || record.phone || ''
       }).catch(err => console.warn('[API] Contact sync warning:', err.message));
     } else if (collection === 'products') {
+      addToast({
+        title: "Success",
+        message: `Created new item in ${collection}`,
+        type: "success"
+      });
       api.createProduct({
         name: record.name,
         sku: record.code || record.sku || `SKU-${Date.now().toString().slice(-4)}`,
@@ -467,8 +472,31 @@ export const AppProvider = ({ children }) => {
         amount: Number(record.amount || 0),
         status: (record.status || 'PAID').toUpperCase(),
         transactionDate: record.date || new Date().toISOString()
-      }).catch(err => console.warn('[API] Transaction sync warning:', err.message));
+      }).then(() => {
+        addToast({
+          title: "Success",
+          message: `Transaction saved successfully`,
+          type: "success"
+        });
+      }).catch(err => {
+        console.warn('[API] Transaction sync warning:', err.message);
+        addToast({
+          title: "Error",
+          message: `Failed to save transaction: ${err.message}`,
+          type: "error"
+        });
+        // Remove the optimistically added record on failure
+        setData(prev => ({
+          ...prev,
+          [collection]: (prev[collection] || []).filter(item => item.id !== newRecord.id)
+        }));
+      });
     } else if (collection === 'journalEntries') {
+      addToast({
+        title: "Success",
+        message: `Created new item in ${collection}`,
+        type: "success"
+      });
       const cleanLines = (record.lines || record.items || []).map(l => ({
         accountName: (l.accountName || 'General Account').trim(),
         debit: Number(l.debit || 0),
@@ -499,6 +527,12 @@ export const AppProvider = ({ children }) => {
           }));
         }
       }).catch(err => console.warn('[API] Journal entry sync warning:', err.message));
+    } else {
+      addToast({
+        title: "Success",
+        message: `Created new item in ${collection}`,
+        type: "success"
+      });
     }
 
     return newRecord;

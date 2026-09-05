@@ -134,6 +134,7 @@ export const SalesOrders = () => {
       id: `TX-${Date.now()}`,
       date: new Date().toISOString().slice(0, 10),
       reference: invId,
+      contactId: so.contactId,
       contact: so.customerName,
       type: 'Sales',
       amount: so.grandTotal,
