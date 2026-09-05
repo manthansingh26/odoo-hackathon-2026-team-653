@@ -132,9 +132,9 @@ export const Products = () => {
       const matchCat = activeCategory === 'All' || p.category === activeCategory;
       const q = searchQuery.toLowerCase();
       const matchSearch =
-        p.name.toLowerCase().includes(q) ||
-        p.code.toLowerCase().includes(q) ||
-        p.category.toLowerCase().includes(q);
+        (p.name || '').toLowerCase().includes(q) ||
+        (p.code || p.sku || '').toLowerCase().includes(q) ||
+        (p.category || '').toLowerCase().includes(q);
       return matchCat && matchSearch;
     });
   }, [data.products, activeCategory, searchQuery]);

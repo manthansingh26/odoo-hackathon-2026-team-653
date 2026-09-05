@@ -23,12 +23,22 @@ export const GlobalSearchModal = () => {
 
     // Contacts
     (data.contacts || []).forEach(c => {
-      if (c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q) || c.mobile.includes(q)) {
+      const name = c.name || '';
+      const email = c.email || '';
+      const phone = c.mobile || c.phone || '';
+      const city = c.city || '';
+
+      if (
+        name.toLowerCase().includes(q) ||
+        email.toLowerCase().includes(q) ||
+        phone.includes(q) ||
+        city.toLowerCase().includes(q)
+      ) {
         matches.push({
           type: 'Contact',
           icon: Users,
-          title: c.name,
-          subtitle: `${c.type} • ${c.city} • Outstanding: ${formatINR(c.outstanding)}`,
+          title: name || 'Unnamed Contact',
+          subtitle: `${c.type || 'Contact'} • ${city || 'N/A'} • Outstanding: ${formatINR(c.outstanding || 0)}`,
           url: '/contacts'
         });
       }
@@ -36,12 +46,20 @@ export const GlobalSearchModal = () => {
 
     // Products
     (data.products || []).forEach(p => {
-      if (p.name.toLowerCase().includes(q) || p.code.toLowerCase().includes(q) || p.category.toLowerCase().includes(q)) {
+      const name = p.name || '';
+      const code = p.code || p.sku || '';
+      const category = p.category || '';
+
+      if (
+        name.toLowerCase().includes(q) ||
+        code.toLowerCase().includes(q) ||
+        category.toLowerCase().includes(q)
+      ) {
         matches.push({
           type: 'Product',
           icon: Package,
-          title: p.name,
-          subtitle: `${p.code} • ${formatINR(p.salesPrice)} • Stock: ${p.stock !== null ? p.stock : 'N/A'}`,
+          title: name || 'Unnamed Product',
+          subtitle: `${code} • ${formatINR(p.salesPrice || 0)} • Stock: ${p.stock !== null && p.stock !== undefined ? p.stock : 'N/A'}`,
           url: '/products'
         });
       }
@@ -49,12 +67,15 @@ export const GlobalSearchModal = () => {
 
     // Invoices
     (data.invoices || []).forEach(inv => {
-      if (inv.id.toLowerCase().includes(q) || inv.customerName.toLowerCase().includes(q)) {
+      const id = inv.id || '';
+      const customerName = inv.customerName || '';
+
+      if (id.toLowerCase().includes(q) || customerName.toLowerCase().includes(q)) {
         matches.push({
           type: 'Invoice',
           icon: Receipt,
-          title: `${inv.id} - ${inv.customerName}`,
-          subtitle: `Amount: ${formatINR(inv.grandTotal)} • Status: ${inv.status}`,
+          title: `${id} - ${customerName}`,
+          subtitle: `Amount: ${formatINR(inv.grandTotal || 0)} • Status: ${inv.status || ''}`,
           url: '/invoices'
         });
       }
@@ -62,12 +83,15 @@ export const GlobalSearchModal = () => {
 
     // Bills
     (data.bills || []).forEach(b => {
-      if (b.id.toLowerCase().includes(q) || b.vendorName.toLowerCase().includes(q)) {
+      const id = b.id || '';
+      const vendorName = b.vendorName || '';
+
+      if (id.toLowerCase().includes(q) || vendorName.toLowerCase().includes(q)) {
         matches.push({
           type: 'Vendor Bill',
           icon: ShoppingCart,
-          title: `${b.id} - ${b.vendorName}`,
-          subtitle: `Amount: ${formatINR(b.total)} • Status: ${b.status}`,
+          title: `${id} - ${vendorName}`,
+          subtitle: `Amount: ${formatINR(b.total || 0)} • Status: ${b.status || ''}`,
           url: '/vendor-bills'
         });
       }
@@ -75,12 +99,16 @@ export const GlobalSearchModal = () => {
 
     // Payments
     (data.payments || []).forEach(pay => {
-      if (pay.id.toLowerCase().includes(q) || pay.contactName.toLowerCase().includes(q) || pay.reference.toLowerCase().includes(q)) {
+      const id = pay.id || '';
+      const contactName = pay.contactName || '';
+      const reference = pay.reference || '';
+
+      if (id.toLowerCase().includes(q) || contactName.toLowerCase().includes(q) || reference.toLowerCase().includes(q)) {
         matches.push({
           type: 'Payment',
           icon: CreditCard,
-          title: `${pay.id} - ${pay.contactName}`,
-          subtitle: `${pay.reference} • ${formatINR(pay.amount)} via ${pay.method}`,
+          title: `${id} - ${contactName}`,
+          subtitle: `${reference} • ${formatINR(pay.amount || 0)} via ${pay.method || ''}`,
           url: '/payments'
         });
       }
@@ -88,12 +116,16 @@ export const GlobalSearchModal = () => {
 
     // Journal Entries
     (data.journalEntries || []).forEach(je => {
-      if (je.id.toLowerCase().includes(q) || je.journal.toLowerCase().includes(q) || je.description.toLowerCase().includes(q)) {
+      const id = je.id || '';
+      const journal = je.journal || '';
+      const description = je.description || '';
+
+      if (id.toLowerCase().includes(q) || journal.toLowerCase().includes(q) || description.toLowerCase().includes(q)) {
         matches.push({
           type: 'Journal Entry',
           icon: BookOpen,
-          title: `${je.id} (${je.journal})`,
-          subtitle: `${je.description} • ${formatINR(je.totalDebit)}`,
+          title: `${id} (${journal})`,
+          subtitle: `${description} • ${formatINR(je.totalDebit || 0)}`,
           url: '/journal-entries'
         });
       }
