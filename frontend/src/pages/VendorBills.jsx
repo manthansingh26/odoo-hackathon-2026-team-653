@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
-import { ShoppingCart, Plus, Eye, CreditCard, CheckCircle } from 'lucide-react';
+import { ShoppingCart, Plus, Eye, CreditCard, CheckCircle, MessageSquare } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
 import { Modal } from '../components/ui/Modal';
+import { HelpFeedbackModal } from '../components/common/HelpFeedbackModal';
 
 export const VendorBills = () => {
   const { data, updateRecord, setActiveModal, formatINR, addRecord } = useAppContext();
 
   const [viewingBill, setViewingBill] = useState(null);
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
   const handleRegisterPayment = (bill) => {
     const payId = `PAY-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -47,15 +49,21 @@ export const VendorBills = () => {
             Incoming invoices received from material suppliers, logistics partners, and subcontractors.
           </p>
         </div>
-        <Button
-          onClick={() => setActiveModal({ type: 'NEW_BILL' })}
-          size="sm"
-          variant="primary"
-          className="shadow-xs"
-        >
-          <Plus className="w-4 h-4 mr-1.5" />
-          Record Vendor Bill
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={() => setIsFeedbackOpen(true)} size="sm" variant="outline" className="shadow-xs text-neutral-700">
+            <MessageSquare className="w-4 h-4 mr-1.5 text-neutral-500" />
+            Help & Feedback
+          </Button>
+          <Button
+            onClick={() => setActiveModal({ type: 'NEW_BILL' })}
+            size="sm"
+            variant="primary"
+            className="shadow-xs"
+          >
+            <Plus className="w-4 h-4 mr-1.5" />
+            Record Vendor Bill
+          </Button>
+        </div>
       </div>
 
       <div className="bg-white rounded-lg border border-neutral-200 shadow-xs overflow-hidden">
@@ -187,6 +195,12 @@ export const VendorBills = () => {
           </div>
         </Modal>
       )}
+
+      <HelpFeedbackModal
+        isOpen={isFeedbackOpen}
+        onClose={() => setIsFeedbackOpen(false)}
+        defaultCategory="Vendor Bills"
+      />
     </div>
   );
 };

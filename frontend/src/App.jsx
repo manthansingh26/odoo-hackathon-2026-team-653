@@ -22,6 +22,7 @@ import { Payments } from './pages/Payments';
 import { Budget } from './pages/Budget';
 import { AnalyticAccounts } from './pages/AnalyticAccounts';
 import { Settings } from './pages/Settings';
+import { AdminFeedbackInbox } from './pages/admin/AdminFeedbackInbox';
 
 // Financial Reports
 import { ReportsHub } from './pages/reports/ReportsHub';
@@ -165,10 +166,14 @@ function App() {
           element={!isContact ? <LedgerReport /> : <Navigate to="/my-invoices" replace />}
         />
 
-        {/* Settings (Admin Only) */}
+        {/* Settings & Feedback Inbox (Admin Only) */}
         <Route
           path="settings"
           element={isAdmin ? <Settings /> : (isContact ? <Navigate to="/my-invoices" replace /> : <Navigate to="/dashboard" replace />)}
+        />
+        <Route
+          path="admin/feedback"
+          element={isAdmin ? <AdminFeedbackInbox /> : (isContact ? <Navigate to="/my-invoices" replace /> : <Navigate to="/dashboard" replace />)}
         />
 
         {/* Contact User Restricted Portal */}

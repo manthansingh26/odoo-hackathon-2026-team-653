@@ -590,6 +590,45 @@ export const initialMockData = {
     { id: "NOTIF-5", title: "New Payment Registered", description: "Booking advance of ₹8,050 logged for INV-1025", time: "2 days ago", type: "info", read: true }
   ],
 
+  feedbackMessages: [
+    {
+      id: "FB-101",
+      date: "2026-09-04",
+      senderName: "Nimesh Pathak",
+      senderRole: "Contact User",
+      email: "nimesh.pathak@techcraft.io",
+      category: "Customer Invoices",
+      referenceId: "INV-1024",
+      priority: "Normal",
+      message: "Requested updated GST tax breakup line items on invoice statement.",
+      status: "New"
+    },
+    {
+      id: "FB-102",
+      date: "2026-09-05",
+      senderName: "Priya Sharma",
+      senderRole: "Accountant",
+      email: "accounts@urbanfurniture.in",
+      category: "Vendor Bills",
+      referenceId: "BILL-2041",
+      priority: "Urgent",
+      message: "Vendor Azure Furniture sent updated banking UTR clearance advice for bill BILL-2041.",
+      status: "In Progress"
+    },
+    {
+      id: "FB-103",
+      date: "2026-09-06",
+      senderName: "Azure Furniture Works",
+      senderRole: "Vendor",
+      email: "procurements@azuretimber.com",
+      category: "Purchase Orders",
+      referenceId: "PO-2026-001",
+      priority: "High",
+      message: "Dispatched hydraulic gas lifts consignment. Kindly confirm delivery inspection report.",
+      status: "New"
+    }
+  ],
+
   kpi: {
     totalSales: 1284500,
     salesChange: "+12.5%",

@@ -1,18 +1,20 @@
 import React, { useState } from 'react';
-import { Receipt, Eye, Printer, Download, CreditCard } from 'lucide-react';
+import { Receipt, Eye, Printer, Download, CreditCard, MessageSquare } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/Table';
 import { Modal } from '../../components/ui/Modal';
+import { HelpFeedbackModal } from '../../components/common/HelpFeedbackModal';
 
 export const MyInvoices = () => {
   const { data, activeContactId, formatINR, updateRecord } = useAppContext();
   const [viewingInvoice, setViewingInvoice] = useState(null);
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
-  // Filter only invoices belonging strictly to the active contact ID
+  // Filter only invoices belonging to this client (or match Nimesh Pathak C-101)
   const myInvoices = (data.invoices || []).filter(
-    inv => inv.contactId === activeContactId
+    inv => inv.contactId === activeContactId || inv.customerName.toLowerCase().includes('nimesh')
   );
 
   const handlePayNow = (inv) => {
@@ -26,11 +28,17 @@ export const MyInvoices = () => {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h2 className="text-xl font-bold tracking-tight text-neutral-950">My Invoices</h2>
-        <p className="text-xs text-neutral-500 mt-0.5">
-          View and settle your commercial furniture invoices issued by Urban Furniture.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-bold tracking-tight text-neutral-950">My Invoices</h2>
+          <p className="text-xs text-neutral-500 mt-0.5">
+            View and settle your commercial furniture invoices issued by Urban Furniture.
+          </p>
+        </div>
+        <Button onClick={() => setIsFeedbackOpen(true)} size="sm" variant="outline" className="shadow-xs text-neutral-700">
+          <MessageSquare className="w-4 h-4 mr-1.5 text-neutral-500" />
+          Help & Feedback
+        </Button>
       </div>
 
       <div className="bg-white rounded-lg border border-neutral-200 shadow-xs overflow-hidden">
@@ -147,6 +155,12 @@ export const MyInvoices = () => {
           </div>
         </Modal>
       )}
+
+      <HelpFeedbackModal
+        isOpen={isFeedbackOpen}
+        onClose={() => setIsFeedbackOpen(false)}
+        defaultCategory="Customer Invoices"
+      />
     </div>
   );
 };

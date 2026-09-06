@@ -11,6 +11,7 @@ import {
   PieChart,
   BarChart3,
   Settings,
+  MessageSquare,
   User,
   ChevronDown,
   ChevronRight,
@@ -29,7 +30,7 @@ import { Badge } from '../ui/Badge';
 export const Sidebar = ({ onCloseMobile }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { userRole, currentUser, logout, resetAllData } = useAppContext();
+  const { userRole, currentUser, logout, resetAllData, data } = useAppContext();
 
   // Collapsible groups in sidebar
   const [openGroups, setOpenGroups] = useState({
@@ -349,16 +350,31 @@ export const Sidebar = ({ onCloseMobile }) => {
               )}
             </div>
 
-            {/* Settings (Admin only) */}
+            {/* Admin Tools */}
             {userRole === 'Admin' && (
-              <NavLink
-                to="/settings"
-                onClick={onCloseMobile}
-                className={({ isActive }) => cn(linkBase, isActive ? linkActive : linkInactive)}
-              >
-                <Settings className="w-4 h-4" />
-                <span>Settings</span>
-              </NavLink>
+              <>
+                <NavLink
+                  to="/admin/feedback"
+                  onClick={onCloseMobile}
+                  className={({ isActive }) => cn(linkBase, isActive ? linkActive : linkInactive)}
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  <span className="flex-1">Help & Feedback</span>
+                  {data?.feedbackMessages?.filter(m => m.status === 'New' || m.status === 'In Progress').length > 0 && (
+                    <Badge variant="warning" className="px-1.5 py-0.5 text-[10px]">
+                      {data.feedbackMessages.filter(m => m.status === 'New' || m.status === 'In Progress').length}
+                    </Badge>
+                  )}
+                </NavLink>
+                <NavLink
+                  to="/settings"
+                  onClick={onCloseMobile}
+                  className={({ isActive }) => cn(linkBase, isActive ? linkActive : linkInactive)}
+                >
+                  <Settings className="w-4 h-4" />
+                  <span>Settings</span>
+                </NavLink>
+              </>
             )}
           </>
         )}

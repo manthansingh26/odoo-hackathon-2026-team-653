@@ -1,11 +1,14 @@
-import React from 'react';
-import { CreditCard } from 'lucide-react';
+import React, { useState } from 'react';
+import { CreditCard, MessageSquare } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
+import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/Table';
+import { HelpFeedbackModal } from '../../components/common/HelpFeedbackModal';
 
 export const MyPayments = () => {
   const { data, activeContactId, formatINR } = useAppContext();
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
   const myPayments = (data.payments || []).filter(
     p => p.contactId === activeContactId
@@ -13,11 +16,17 @@ export const MyPayments = () => {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h2 className="text-xl font-bold tracking-tight text-neutral-950">My Payment History</h2>
-        <p className="text-xs text-neutral-500 mt-0.5">
-          Receipts and clearance references for all electronic transfers and UPI payments.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-bold tracking-tight text-neutral-950">My Payment History</h2>
+          <p className="text-xs text-neutral-500 mt-0.5">
+            Receipts and clearance references for all electronic transfers and UPI payments.
+          </p>
+        </div>
+        <Button onClick={() => setIsFeedbackOpen(true)} size="sm" variant="outline" className="shadow-xs text-neutral-700">
+          <MessageSquare className="w-4 h-4 mr-1.5 text-neutral-500" />
+          Help & Feedback
+        </Button>
       </div>
 
       <div className="bg-white rounded-lg border border-neutral-200 shadow-xs overflow-hidden">
@@ -56,6 +65,12 @@ export const MyPayments = () => {
           </TableBody>
         </Table>
       </div>
+
+      <HelpFeedbackModal
+        isOpen={isFeedbackOpen}
+        onClose={() => setIsFeedbackOpen(false)}
+        defaultCategory="Payments & Settlement"
+      />
     </div>
   );
 };

@@ -51,7 +51,7 @@ model Contact {
   name      String
   type      ContactType
   email     String?     @unique
-  phone     String?
+  phone     String?     @unique
   createdAt DateTime    @default(now()) @map("created_at")
 
   transactions Transaction[]
@@ -120,4 +120,19 @@ model JournalItem {
   journalEntry JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
 
   @@map("journal_items")
+}
+
+model Feedback {
+  id          String   @id @default(uuid())
+  senderName  String   @map("sender_name")
+  senderRole  String   @map("sender_role")
+  email       String
+  category    String
+  referenceId String?  @map("reference_id")
+  priority    String   @default("Normal")
+  message     String
+  status      String   @default("New")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("feedback_messages")
 }
