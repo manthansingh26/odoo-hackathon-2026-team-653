@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
-import { CreditCard, Plus, Eye, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
+import { CreditCard, Plus, Eye, ArrowDownLeft, ArrowUpRight, MessageSquare } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
 import { Modal } from '../components/ui/Modal';
+import { HelpFeedbackModal } from '../components/common/HelpFeedbackModal';
 
 export const Payments = () => {
   const { data, setActiveModal, formatINR } = useAppContext();
 
   const [viewingPayment, setViewingPayment] = useState(null);
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
   return (
     <div className="space-y-5">
@@ -20,15 +22,21 @@ export const Payments = () => {
             Audit log of cash inflows from customers and bank disbursements to suppliers.
           </p>
         </div>
-        <Button
-          onClick={() => setActiveModal({ type: 'NEW_PAYMENT' })}
-          size="sm"
-          variant="primary"
-          className="shadow-xs"
-        >
-          <Plus className="w-4 h-4 mr-1.5" />
-          Record Payment
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={() => setIsFeedbackOpen(true)} size="sm" variant="outline" className="shadow-xs text-neutral-700">
+            <MessageSquare className="w-4 h-4 mr-1.5 text-neutral-500" />
+            Help & Feedback
+          </Button>
+          <Button
+            onClick={() => setActiveModal({ type: 'NEW_PAYMENT' })}
+            size="sm"
+            variant="primary"
+            className="shadow-xs"
+          >
+            <Plus className="w-4 h-4 mr-1.5" />
+            Record Payment
+          </Button>
+        </div>
       </div>
 
       <div className="bg-white rounded-lg border border-neutral-200 shadow-xs overflow-hidden">
@@ -147,6 +155,12 @@ export const Payments = () => {
           </div>
         </Modal>
       )}
+
+      <HelpFeedbackModal
+        isOpen={isFeedbackOpen}
+        onClose={() => setIsFeedbackOpen(false)}
+        defaultCategory="Payments & Settlement"
+      />
     </div>
   );
 };

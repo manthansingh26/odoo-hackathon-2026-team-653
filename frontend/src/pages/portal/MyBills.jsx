@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
-import { ShoppingCart, Eye } from 'lucide-react';
+import { ShoppingCart, Eye, MessageSquare } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/Table';
 import { Modal } from '../../components/ui/Modal';
+import { HelpFeedbackModal } from '../../components/common/HelpFeedbackModal';
 
 export const MyBills = () => {
   const { data, activeContactId, formatINR } = useAppContext();
   const [viewingBill, setViewingBill] = useState(null);
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
   // In contact user view, filter vendor bills strictly by active contact ID
   const myBills = (data.bills || []).filter(
@@ -17,11 +19,17 @@ export const MyBills = () => {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h2 className="text-xl font-bold tracking-tight text-neutral-950">My Bills & Supplier Statements</h2>
-        <p className="text-xs text-neutral-500 mt-0.5">
-          Invoices and purchase bills submitted to Urban Furniture for material supplies and services.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-bold tracking-tight text-neutral-950">My Bills & Supplier Statements</h2>
+          <p className="text-xs text-neutral-500 mt-0.5">
+            Invoices and purchase bills submitted to Urban Furniture for material supplies and services.
+          </p>
+        </div>
+        <Button onClick={() => setIsFeedbackOpen(true)} size="sm" variant="outline" className="shadow-xs text-neutral-700">
+          <MessageSquare className="w-4 h-4 mr-1.5 text-neutral-500" />
+          Help & Feedback
+        </Button>
       </div>
 
       <div className="bg-white rounded-lg border border-neutral-200 shadow-xs overflow-hidden">
@@ -89,6 +97,12 @@ export const MyBills = () => {
           </div>
         </Modal>
       )}
+
+      <HelpFeedbackModal
+        isOpen={isFeedbackOpen}
+        onClose={() => setIsFeedbackOpen(false)}
+        defaultCategory="Vendor Bills"
+      />
     </div>
   );
 };

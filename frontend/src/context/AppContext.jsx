@@ -930,6 +930,57 @@ export const AppProvider = ({ children }) => {
     }).format(num);
   };
 
+  const addFeedback = (feedbackItem) => {
+    const newFeedback = {
+      id: `FB-${Math.floor(100 + Math.random() * 900)}`,
+      date: new Date().toISOString().slice(0, 10),
+      senderName: currentUser?.name || (userRole === 'Contact User' ? 'Nimesh Pathak' : 'Staff User'),
+      senderRole: userRole,
+      email: currentUser?.email || 'user@urbanfurniture.in',
+      priority: feedbackItem.priority || 'Normal',
+      status: 'New',
+      adminNote: '',
+      ...feedbackItem
+    };
+
+    setData(prev => ({
+      ...prev,
+      feedbackMessages: [newFeedback, ...(prev.feedbackMessages || [])],
+      notifications: [
+        {
+          id: `NOTIF-${Date.now()}`,
+          title: `New ${feedbackItem.category || 'Purchases & Billing'} Issue`,
+          description: `From ${newFeedback.senderName} (${newFeedback.senderRole}): "${(newFeedback.message || '').slice(0, 50)}..."`,
+          time: 'Just now',
+          type: 'warning',
+          read: false
+        },
+        ...(prev.notifications || [])
+      ]
+    }));
+
+    addToast({
+      title: "Help & Feedback Dispatched",
+      message: "Your message has been directly forwarded to the Executive Admin.",
+      type: "success"
+    });
+    return newFeedback;
+  };
+
+  const updateFeedbackStatus = (id, status, adminNote = '') => {
+    setData(prev => ({
+      ...prev,
+      feedbackMessages: (prev.feedbackMessages || []).map(item =>
+        item.id === id ? { ...item, status, ...(adminNote ? { adminNote } : {}) } : item
+      )
+    }));
+    addToast({
+      title: "Feedback Ticket Updated",
+      message: `Ticket #${id} status updated to ${status}.`,
+      type: "info"
+    });
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -961,6 +1012,8 @@ export const AppProvider = ({ children }) => {
         markNotificationRead,
         clearAllNotifications,
         resetAllData,
+        addFeedback,
+        updateFeedbackStatus,
         formatINR,
         api
       }}

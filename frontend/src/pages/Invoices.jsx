@@ -11,18 +11,21 @@ import {
   Building2,
   Phone,
   Mail,
-  MapPin
+  MapPin,
+  MessageSquare
 } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
 import { Modal } from '../components/ui/Modal';
+import { HelpFeedbackModal } from '../components/common/HelpFeedbackModal';
 
 export const Invoices = () => {
   const { data, updateRecord, setActiveModal, formatINR, addToast } = useAppContext();
 
   const [activeInvoice, setActiveInvoice] = useState(null);
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
   const handleMarkPaid = (inv) => {
     updateRecord('invoices', inv.id, {
@@ -72,15 +75,21 @@ export const Invoices = () => {
             GST compliant sales tax invoices and receivables tracking.
           </p>
         </div>
-        <Button
-          onClick={() => setActiveModal({ type: 'NEW_INVOICE' })}
-          size="sm"
-          variant="primary"
-          className="shadow-xs"
-        >
-          <Plus className="w-4 h-4 mr-1.5" />
-          Create Invoice
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={() => setIsFeedbackOpen(true)} size="sm" variant="outline" className="shadow-xs text-neutral-700">
+            <MessageSquare className="w-4 h-4 mr-1.5 text-neutral-500" />
+            Help & Feedback
+          </Button>
+          <Button
+            onClick={() => setActiveModal({ type: 'NEW_INVOICE' })}
+            size="sm"
+            variant="primary"
+            className="shadow-xs"
+          >
+            <Plus className="w-4 h-4 mr-1.5" />
+            Create Invoice
+          </Button>
+        </div>
       </div>
 
       {/* Invoices List Table */}
@@ -342,6 +351,12 @@ export const Invoices = () => {
           </div>
         </Modal>
       )}
+
+      <HelpFeedbackModal
+        isOpen={isFeedbackOpen}
+        onClose={() => setIsFeedbackOpen(false)}
+        defaultCategory="Customer Invoices"
+      />
     </div>
   );
 };
