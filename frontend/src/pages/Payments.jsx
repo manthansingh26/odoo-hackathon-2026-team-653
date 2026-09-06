@@ -58,9 +58,8 @@ export const Payments = () => {
                     <TableCell className="font-mono text-xs text-neutral-600">{p.date}</TableCell>
                     <TableCell className="font-semibold text-neutral-900">{p.contactName}</TableCell>
                     <TableCell>
-                      <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md font-medium ${
-                        isCustomer ? 'bg-[#e8f5e9] text-[#2e7d32]' : 'bg-neutral-100 text-neutral-800'
-                      }`}>
+                      <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md font-medium ${isCustomer ? 'bg-[#e8f5e9] text-[#2e7d32]' : 'bg-neutral-100 text-neutral-800'
+                        }`}>
                         {isCustomer ? <ArrowDownLeft className="w-3 h-3" /> : <ArrowUpRight className="w-3 h-3" />}
                         {p.type}
                       </span>

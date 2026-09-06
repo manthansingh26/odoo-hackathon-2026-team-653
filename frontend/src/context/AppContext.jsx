@@ -158,15 +158,15 @@ export const AppProvider = ({ children }) => {
             },
             recentTransactions: summary.recentTransactions && summary.recentTransactions.length > 0
               ? summary.recentTransactions.map(tx => ({
-                  id: tx.id,
-                  date: tx.transactionDate ? tx.transactionDate.slice(0, 10) : new Date().toISOString().slice(0, 10),
-                  reference: tx.reference,
-                  contact: tx.contact?.name || 'Contact',
-                  type: tx.type === 'SALE' ? 'Sales' : tx.type === 'PURCHASE' ? 'Purchase' : tx.type,
-                  amount: Number(tx.amount || 0),
-                  status: tx.status === 'PAID' ? 'Paid' : tx.status === 'PENDING' ? 'Pending' : tx.status,
-                  paymentMethod: 'Bank'
-                }))
+                id: tx.id,
+                date: tx.transactionDate ? tx.transactionDate.slice(0, 10) : new Date().toISOString().slice(0, 10),
+                reference: tx.reference,
+                contact: tx.contact?.name || 'Contact',
+                type: tx.type === 'SALE' ? 'Sales' : tx.type === 'PURCHASE' ? 'Purchase' : tx.type,
+                amount: Number(tx.amount || 0),
+                status: tx.status === 'PAID' ? 'Paid' : tx.status === 'PENDING' ? 'Pending' : tx.status,
+                paymentMethod: 'Bank'
+              }))
               : prev.recentTransactions
           }));
         }
@@ -418,7 +418,7 @@ export const AppProvider = ({ children }) => {
           const mappedEntries = entries.map(entry => {
             const rawDate = entry.transactionDate || entry.date || entry.createdAt || new Date().toISOString();
             const dateStr = typeof rawDate === 'string' ? rawDate.slice(0, 10) : new Date(rawDate).toISOString().slice(0, 10);
-            
+
             // Backend Prisma model returns items array
             const rawItems = entry.items || entry.lines || [];
             const mappedLines = rawItems.map(l => ({
@@ -442,8 +442,8 @@ export const AppProvider = ({ children }) => {
               entry.transaction?.type === 'SALE'
                 ? 'Sales Journal'
                 : entry.transaction?.type === 'PURCHASE'
-                ? 'Purchase Journal'
-                : 'General Journal'
+                  ? 'Purchase Journal'
+                  : 'General Journal'
             );
 
             return {
@@ -638,7 +638,7 @@ export const AppProvider = ({ children }) => {
       if (res?.token) {
         localStorage.setItem('urban_furniture_jwt_token', res.token);
       }
-    }).catch(() => {});
+    }).catch(() => { });
 
     setCurrentUser(newUser);
     setUserRoleState(role);
@@ -660,7 +660,7 @@ export const AppProvider = ({ children }) => {
     } catch (err) {
       console.error("Storage error during logout", err);
     }
-    api.logout().catch(() => {});
+    api.logout().catch(() => { });
     setIsAuthenticated(false);
     setCurrentUser(null);
     setUserRoleState('Admin');
@@ -740,7 +740,7 @@ export const AppProvider = ({ children }) => {
         if (res?.journalEntry) {
           api.getJournalEntries().then(entries => {
             if (Array.isArray(entries)) setData(prev => ({ ...prev, journalEntries: entries }));
-          }).catch(() => {});
+          }).catch(() => { });
         }
       }).catch(err => console.warn('[API] Invoice sync warning:', err.message));
     } else if (collection === 'bills') {
@@ -756,7 +756,7 @@ export const AppProvider = ({ children }) => {
         if (res?.journalEntry) {
           api.getJournalEntries().then(entries => {
             if (Array.isArray(entries)) setData(prev => ({ ...prev, journalEntries: entries }));
-          }).catch(() => {});
+          }).catch(() => { });
         }
       }).catch(err => console.warn('[API] Bill sync warning:', err.message));
     } else if (collection === 'payments') {
@@ -773,7 +773,7 @@ export const AppProvider = ({ children }) => {
         if (res?.journalEntry) {
           api.getJournalEntries().then(entries => {
             if (Array.isArray(entries)) setData(prev => ({ ...prev, journalEntries: entries }));
-          }).catch(() => {});
+          }).catch(() => { });
         }
       }).catch(err => console.warn('[API] Payment sync warning:', err.message));
     } else if (collection === 'salesOrders') {
@@ -820,13 +820,13 @@ export const AppProvider = ({ children }) => {
             journalEntries: (prev.journalEntries || []).map(e =>
               (e.id === record.id || e.reference === record.reference)
                 ? {
-                    ...e,
-                    id: res.entry.id,
-                    reference: res.entry.reference,
-                    transactionDate: res.entry.transactionDate,
-                    totalDebit: res.totalDebit !== undefined ? Number(res.totalDebit) : e.totalDebit,
-                    totalCredit: res.totalCredit !== undefined ? Number(res.totalCredit) : e.totalCredit,
-                  }
+                  ...e,
+                  id: res.entry.id,
+                  reference: res.entry.reference,
+                  transactionDate: res.entry.transactionDate,
+                  totalDebit: res.totalDebit !== undefined ? Number(res.totalDebit) : e.totalDebit,
+                  totalCredit: res.totalCredit !== undefined ? Number(res.totalCredit) : e.totalCredit,
+                }
                 : e
             ),
           }));
@@ -858,7 +858,7 @@ export const AppProvider = ({ children }) => {
       }).then(() => {
         api.getJournalEntries().then(entries => {
           if (Array.isArray(entries)) setData(prev => ({ ...prev, journalEntries: entries }));
-        }).catch(() => {});
+        }).catch(() => { });
       }).catch(err => console.warn('[API] Invoice payment sync warning:', err.message));
     } else if (collection === 'bills' && updatedRecord.status === 'Paid') {
       api.payBill(id, {
@@ -867,7 +867,7 @@ export const AppProvider = ({ children }) => {
       }).then(() => {
         api.getJournalEntries().then(entries => {
           if (Array.isArray(entries)) setData(prev => ({ ...prev, journalEntries: entries }));
-        }).catch(() => {});
+        }).catch(() => { });
       }).catch(err => console.warn('[API] Bill payment sync warning:', err.message));
     }
   };
